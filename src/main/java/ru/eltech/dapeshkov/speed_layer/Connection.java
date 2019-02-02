@@ -7,22 +7,22 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * This class represents the connection to RSS.
- * The {@link RSS#close() } should be called after reading all necessary information from RSS to close the connection and {@link InputStream}.
+ * This class represents the connection to Connection.
+ * The {@link Connection#close() } should be called after reading all necessary information from Connection to close the connection and {@link InputStream}.
  */
 
-class RSS implements AutoCloseable {
+class Connection implements AutoCloseable {
     private final URL url;
     private long lastModified = -1; //HTTP Last-Modified
-    private InputStream in = null; //Stream for reading from RSS
+    private InputStream in = null; //Stream for reading from Connection
     private HttpURLConnection connection = null;
 
     /**
-     * Initializes the instance of the {@code RSS} with given URL.
-     * @param url URL of the RSS
+     * Initializes the instance of the {@code Connection} with given URL.
+     * @param url URL of the Connection
      */
 
-    RSS(String url) {
+    Connection(String url) {
         URL url1;
         try {
             url1 = new URL(url);
@@ -34,8 +34,8 @@ class RSS implements AutoCloseable {
     }
 
     /**
-     * Connects to the RSS (If-Modified-Since is used) and returns {@link InputStream  InputStream} of the given RSS.
-     * @return the data of the RSS.
+     * Connects to the site (If-Modified-Since is used) and returns {@link InputStream  InputStream} of the given site content.
+     * @return the data of the site.
      */
 
     InputStream get() {
@@ -43,6 +43,7 @@ class RSS implements AutoCloseable {
         try {
             connection = (HttpURLConnection) url.openConnection();
             connection.setUseCaches(false);
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
             if (lastModified != -1) {
                 connection.setIfModifiedSince(lastModified);
             }
