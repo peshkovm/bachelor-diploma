@@ -10,17 +10,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is a parser of RSS.
- * It outputs the contents of item to the files, also this class saves the value of most recent post in RSS and outputs only newly added posts, when RSS is updated.
+ * This class is a parser of Connection.
+ * It outputs the contents of item to the files, also this class saves the value of most recent post in Connection and outputs only newly added posts, when Connection is updated.
  */
 
 class StaxStreamProcessor {
     private static final XMLInputFactory FACTORY = XMLInputFactory.newInstance(); //StAX
-    private ZonedDateTime lastpubdate; // date of the last publication in given RSS
+    private ZonedDateTime lastpubdate; // date of the last publication in given Connection
 
     /**
-     * parses RSS contents and outputs results to the file.
-     * @param is contents of the RSS.
+     * parses Connection contents and outputs results to the file.
+     * @param is contents of the Connection.
      * @param file name of the output file.
      */
 
@@ -35,7 +35,7 @@ class StaxStreamProcessor {
                     if (str != null) {
                         ZonedDateTime pubdate = getDate(str); //gets the date of the item
                         if (lastpubdate == null || lastpubdate.isBefore(pubdate)) { //if it is a new item (the date of the item is after the lastpubdate)
-                            if (time == null || pubdate.isAfter(time)) {//time will be the max date of the items in given RSS
+                            if (time == null || pubdate.isAfter(time)) {//time will be the max date of the items in given Connection
                                 time = pubdate;
                             }
                             bufferedWriter.write(str + "\n" + "\n");
@@ -44,7 +44,7 @@ class StaxStreamProcessor {
                     }
                 }
                 if (time != null) {
-                    lastpubdate = time;//lastpubdate is the max date of the items in the given RSS
+                    lastpubdate = time;//lastpubdate is the max date of the items in the given Connection
                 }
             }
         } catch (XMLStreamException | IOException e) {
