@@ -3,7 +3,6 @@ package ru.eltech.dapeshkov.speed_layer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.xml.transform.Source;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -11,13 +10,24 @@ import java.util.Arrays;
 public class JSONProcessor {
     static final ObjectMapper mapper = new ObjectMapper();
 
-    void parse(InputStream is, String file) {
+    public static <T> T parse(String str, Class<T> cl) {
+        T json = null;
         try {
-            News json = mapper.readValue(is, News.class);
-            System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json));
+            json = mapper.readValue(str, cl);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return json;
+    }
+
+    public static <T> T parse(InputStream in, Class<T> cl) {
+        T json = null;
+        try {
+            json = mapper.readValue(in, cl);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 
     static class Item {
@@ -151,7 +161,7 @@ public class JSONProcessor {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    static class News {
+    public static class News {
         private Item[] items;
 
         public void setItems(Item[] items) {
@@ -167,6 +177,36 @@ public class JSONProcessor {
 
         public Item[] getItems() {
             return items;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Train {
+        String text;
+        String sentiment;
+
+        @Override
+        public String toString() {
+            return "Train{" +
+                    "text='" + text + '\'' +
+                    ", sentiment='" + sentiment + '\'' +
+                    '}';
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public String getSentiment() {
+            return sentiment;
+        }
+
+        public void setSentiment(String sentiment) {
+            this.sentiment = sentiment;
         }
     }
 }

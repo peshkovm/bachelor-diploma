@@ -9,7 +9,7 @@ import java.io.IOException;
  */
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         NewsReader reader = new NewsReader(new URLFilePair("out1.txt","https://www.rbc.ru/search/ajax/?limit=1&tag=Google"));
         reader.start();
     }

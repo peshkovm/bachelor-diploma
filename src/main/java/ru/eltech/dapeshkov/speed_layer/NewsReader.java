@@ -1,5 +1,8 @@
 package ru.eltech.dapeshkov.speed_layer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.concurrent.*;
 
 /**
@@ -25,25 +28,28 @@ public class NewsReader {
 
         /**
          * Initializes the instance of {@code URLFilePair}.
+         *
          * @param file output file name
-         * @param url URL of the site*/
+         * @param url  URL of the site
+         */
 
         public URLFilePair(String file, String url) {
             this.file = file;
             this.url = url;
         }
 
-        private String getFile() {
+        public String getFile() {
             return file;
         }
 
-        private String getUrl() {
+        public String getUrl() {
             return url;
         }
     }
 
     /**
      * Initialize the instance of {@code NewsReader}.
+     *
      * @param mas the array of {@link URLFilePair}
      */
 
@@ -60,11 +66,13 @@ public class NewsReader {
     public void start() {
         for (URLFilePair a : array) {
             Connection connection = new Connection(a.getUrl());
-            //StaxStreamProcessor processor = new StaxStreamProcessor(); //XML processor
-            JSONProcessor processor1 = new JSONProcessor();
             ex.scheduleAtFixedRate(() -> {
-                try (connection) {
-                    processor1.parse(connection.get(), a.getFile());
+                try (connection; BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(a.getFile(), true))) {
+                    JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
+                    bufferedWriter.write(news.toString() + "\n" + "\n");
+                    bufferedWriter.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }, 0, 3, TimeUnit.SECONDS);
         }
