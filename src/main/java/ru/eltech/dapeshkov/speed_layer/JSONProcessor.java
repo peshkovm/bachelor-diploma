@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class JSONProcessor {
-    static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static <T> T parse(String str, Class<T> cl) {
         T json = null;

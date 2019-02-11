@@ -1,24 +1,29 @@
 package ru.eltech.dapeshkov.classifier;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Mode;
+import ru.eltech.dapeshkov.speed_layer.JSONProcessor;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Processing {
 
     private static Map<Pair, Double> likelihood = Collections.synchronizedMap(new HashMap<Pair, Double>());
     private static Map<String, Double> prior_probability = Collections.synchronizedMap(new HashMap<String, Double>());
-    private static HashSet<String> hash = new HashSet<>();
-    static int count = 0;
-    static int n;
+    private static final HashSet<String> hash = new HashSet<>();
+    private static int count = 0;
+    private static int n;
+    static final private String[] category = {"positive", "negative", "neutral"};
+
+    static {
+        try {
+            Files.lines(Paths.get("stopwatch.txt")).forEach(hash::add);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private static class Pair {
         String word;
@@ -61,64 +66,47 @@ public class Processing {
     }
 
     static String[] parse(String str, int n) {
-        //str = str.toLowerCase().replaceAll("\\p{P}", "");
-        //String[] res = Pattern.compile("([^\\s]+)").matcher(str).results().map(MatchResult::group).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
-        //String[] res = str.split("([^\\s]+)");
+        String[] res = str.toLowerCase().split("[^\\p{L}]+");
+        res = Arrays.stream(res).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
 
-        //res = ngram(res, n);
-
-        String[] res={"odfjidof","oijfodjf","iodfjiudf"};
+        res = ngram(res, n);
 
         return res;
     }
 
     static String[] ngram(String[] arr, int n) {
-        if (n == 1) return arr;
-
-        StringBuilder[] res = new StringBuilder[arr.length - n + 1];
-        for (int i = 0; i < res.length; ++i) {
-            res[i] = new StringBuilder();
-        }
-
+        String[] res = new String[arr.length - n + 1];
         for (int i = 0; i < arr.length - n + 1; i++) {
+            StringBuilder str = new StringBuilder();
             for (int j = 0; j < n; j++) {
-                res[i] = res[i].append(arr[i + j]).append(" ");
+                str.append(arr[i + j]).append(" ");
             }
+            res[i] = str.toString();
         }
-        return Arrays.stream(res).map(StringBuilder::toString).toArray(String[]::new);
+        return res;
     }
 
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @Fork(value = 1, warmups = 1)
-    static public void train() {
-        /*try {
-            Files.lines(Paths.get("stopwatch.txt")).forEach(hash::add);
+    static public void train(int n) {
+        Processing.n = n;
+
+        JSONProcessor.Train[] arr = null;
+
+        try (FileInputStream in = new FileInputStream("train.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        Processing.n = n;*/
+        count = arr.length;
 
-        Path path = FileSystems.getDefault().getPath("train.json");
-        String str1 = null;
-        try {
-            str1 = Files.lines(path).collect(Collectors.joining());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Arrays.stream(arr).parallel().unordered().forEach(i -> {
+            String[] strings = parse(i.getText(), Processing.n);
+            Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
+            prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
+        });
 
-        //JSONProcessor.Train[] arr = JSONProcessor.parse(str1, JSONProcessor.Train[].class);
-        //count = arr.length;
-
-        //Arrays.stream(arr).unordered().parallel().forEach(i -> {
-            //String[] strings = parse(i.getText(), Processing.n);
-            //Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
-            //prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
-        //});
-
-        //likelihood.replaceAll((t, u) -> (u + 1) / (prior_probability.get(t.getCategory()) + likelihood.size()));
-        //prior_probability.replaceAll((t, u) -> u);
+        likelihood.replaceAll((t, u) -> (u + 1) / (prior_probability.get(t.getCategory()) + likelihood.size()));
+        prior_probability.replaceAll((t, u) -> u);
     }
 
     static Double classify_cat(String str, String[] arr) {
@@ -129,43 +117,15 @@ public class Processing {
     }
 
     static String sentiment(String str) {
-        String[] category = {"positive", "negative", "neutral"};
         String[] arr = parse(str, Processing.n);
 
 
-        //Arrays.stream(category).forEach(t -> System.out.println(classify_cat(t, arr)));
-        return Arrays.stream(category)
+        return Arrays.stream(category).unordered()
                 .max(Comparator.comparingDouble(o -> classify_cat(o, arr)))
                 .get();
     }
 
-    /*public static void main(String[] args) {
-        *//*long l=System.currentTimeMillis();
+    public static void main(String[] args) {
         train(2);
-        long l2=System.currentTimeMillis();
-        System.out.println(l2-l);
-
-        Path path = FileSystems.getDefault().getPath("train.json");
-        String str1 = null;
-
-        try {
-            str1 = Files.lines(path).collect(Collectors.joining());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        JSONProcessor.Train[] arr = JSONProcessor.parse(str1, JSONProcessor.Train[].class);
-
-        int a = 0;
-        int b = arr.length;
-
-        for (JSONProcessor.Train i : arr) {
-            String str = sentiment(i.getText());
-            if (str.equals(i.getSentiment())) {
-                a++;
-            }
-        }
-
-        System.out.println((double) a / b * 100);*//*
-    }*/
+    }
 }
