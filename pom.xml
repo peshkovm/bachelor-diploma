@@ -18,26 +18,7 @@
     <maven.compiler.target>1.10</maven.compiler.target>
   </properties>
 
-
-  <!-- don't need -->
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
-  <!-- don't need -->
-
   <dependencies>
-
-    <!-- don't need -->
-    <dependency>
-      <groupId>com.github.ptnplanet</groupId>
-      <artifactId>Java-Naive-Bayes-Classifier</artifactId>
-      <version>1.0.7</version>
-    </dependency>
-    <!-- don't need -->
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
