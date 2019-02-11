@@ -111,14 +111,13 @@ public class Processing {
 
     static Double classify_cat(String str, String[] arr) {
         return Math.log(prior_probability.get(str) / count) +
-                Arrays.stream(arr)
+                Arrays.stream(arr).parallel().unordered()
                         .mapToDouble(value -> likelihood.getOrDefault(new Pair(value, str), 1 / (prior_probability.get(str) / count + likelihood.size())))
                         .reduce(0, (left, right) -> left + Math.log(right));
     }
 
     static String sentiment(String str) {
         String[] arr = parse(str, Processing.n);
-
 
         return Arrays.stream(category).unordered()
                 .max(Comparator.comparingDouble(o -> classify_cat(o, arr)))
