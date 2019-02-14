@@ -3,6 +3,7 @@ package ru.eltech.dapeshkov.speed_layer;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.concurrent.*;
 
 /**
@@ -16,6 +17,7 @@ import java.util.concurrent.*;
 public class NewsReader {
     private final URLFilePair[] array;
     private final ScheduledExecutorService ex = Executors.newScheduledThreadPool(4); // ExecutorService that runs the tasks
+    private ZonedDateTime lastpubdate = null;
 
     /**
      * A pair of two {@link String} that is used to represent a file name and an URL name of the site.
@@ -69,9 +71,12 @@ public class NewsReader {
             ex.scheduleAtFixedRate(() -> {
                 try (connection; BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(a.getFile(), true))) {
                     JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
-                    bufferedWriter.write(news.toString() + "\n" + "\n");
-                    bufferedWriter.flush();
-                } catch (IOException e) {
+                    if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
+                        lastpubdate = news.getItems()[0].getPublish_date();
+                        bufferedWriter.write(news.toString() + "\n" + "\n");
+                        bufferedWriter.flush();
+                    }
+                } catch (IOException | NullPointerException e) {
                     e.printStackTrace();
                 }
             }, 0, 3, TimeUnit.SECONDS);
