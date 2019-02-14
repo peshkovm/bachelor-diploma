@@ -104,15 +104,12 @@ public class Processing {
             Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
             prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
         });
-
-        likelihood.replaceAll((t, u) -> (u + 1) / (prior_probability.get(t.getCategory()) + likelihood.size()));
-        prior_probability.replaceAll((t, u) -> u);
     }
 
     static Double classify_cat(String str, String[] arr) {
         return Math.log(prior_probability.get(str) / count) +
-                Arrays.stream(arr).parallel().unordered()
-                        .mapToDouble(value -> likelihood.getOrDefault(new Pair(value, str), 1 / (prior_probability.get(str) / count + likelihood.size())))
+                Arrays.stream(arr).unordered()
+                        .mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, str), 0d) + 1) / (prior_probability.get(str) + likelihood.size()))
                         .reduce(0, (left, right) -> left + Math.log(right));
     }
 
@@ -126,5 +123,23 @@ public class Processing {
 
     public static void main(String[] args) {
         train(2);
+
+        JSONProcessor.Train[] arr = null;
+
+        try (FileInputStream in = new FileInputStream("train.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        int a = 0;
+
+        for (JSONProcessor.Train i : arr) {
+            if (sentiment(i.getText()).equals(i.getSentiment())) {
+                a++;
+            }
+        }
+
+        System.out.println((double) a / arr.length * 100);
     }
 }
