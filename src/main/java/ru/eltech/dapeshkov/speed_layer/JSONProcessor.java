@@ -1,14 +1,23 @@
 package ru.eltech.dapeshkov.speed_layer;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 
 public class JSONProcessor {
     private static final ObjectMapper mapper = new ObjectMapper();
+
+    static {
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     public static <T> T parse(String str, Class<T> cl) {
         T json = null;
@@ -54,6 +63,15 @@ public class JSONProcessor {
         private String fronturl;
         private String id;
         private String opinion_authors;
+
+        public ZonedDateTime getPublish_date() {
+            return publish_date;
+        }
+
+        public void setPublish_date(ZonedDateTime publish_date) {
+            this.publish_date = publish_date;
+        }
+
         private Photo photo;
 
         public void setPhoto(Photo photo) {
@@ -65,7 +83,9 @@ public class JSONProcessor {
         }
 
         private String project;
-        private String publish_date;
+
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "EEE, dd MMM yyyy HH:mm:ss Z", locale = "en_GB")
+        private ZonedDateTime publish_date;
         private String title;
 
         public void setAnons(String anons) {
@@ -94,10 +114,6 @@ public class JSONProcessor {
 
         public void setProject(String project) {
             this.project = project;
-        }
-
-        public void setPublish_date(String publish_date) {
-            this.publish_date = publish_date;
         }
 
         public void setTitle(String title) {
@@ -130,10 +146,6 @@ public class JSONProcessor {
 
         public String getProject() {
             return project;
-        }
-
-        public String getPublish_date() {
-            return publish_date;
         }
 
         public String getTitle() {
