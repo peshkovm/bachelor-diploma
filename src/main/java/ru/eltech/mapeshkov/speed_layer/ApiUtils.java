@@ -3,13 +3,13 @@ package ru.eltech.mapeshkov.speed_layer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDate;
+import java.util.*;
 
 /**
  * This class contains various methods for parsing api from
@@ -17,119 +17,117 @@ import java.util.concurrent.TimeUnit;
  * <i>Alpha Vantage</i></a> site
  */
 public class ApiUtils {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     // Suppresses default constructor, ensuring non-instantiability.
     private ApiUtils() {
     }
 
     public static class AlphaVantageParser {
-        private static String lastTimeRefreshedCrypto;
-        private static String lastTimeRefreshedStock;
-
         // Suppresses default constructor, ensuring non-instantiability.
         private AlphaVantageParser() {
         }
 
-        /**
-         * Parse Stock Time Series with intraday temporal resolution.
-         */
-        public static void parseStockTimeSeries() {
-            final String function = "TIME_SERIES_INTRADAY";
-            final String symbol = "MSFT";
-            final String interval = "1min";
-            JsonNode node;
+        public static StockInfoDaily getStockAtSpecifiedDay(final LocalDate date, final String companyName) {
+            final String function = "TIME_SERIES_DAILY";
+            final String dataType = "json";
+            StockInfoDaily stockInfo;
+
+            CompanyInfo companyInfo = getSymbolFromCompanyName(companyName);
+            String symbol = companyInfo.getSymbol();
 
             try {
-                URL url = new URL("https://www.alphavantage.co/query" +
+                final URL url = new URL("https://www.alphavantage.co/query" +
                         "?function=" + function +
                         "&symbol=" + symbol +
-                        "&interval=" + interval +
-                        "&datatype=json" +
+                        "&outputsize=" + "full" +
+                        "&datatype=" + dataType +
                         "&apikey=TF0UUHCZB8SBMXDP");
+                JsonNode node = getNodeFromUrl(url);
+                JsonNode foundNode = null;
 
-                do {
-                    node = getNodeFromUrl(url);
-                    if (frequencyExcessHandler(node))
-                        return;
+                for (LocalDate localDate = date; foundNode == null; localDate = localDate.minusDays(1)) {
+                    foundNode = node.findValue(localDate.toString());
+                }
 
-                    final String refreshed = node.path("Meta Data")
-                            .get("3. Last Refreshed").asText();
-
-                    System.out.println("refreshed = " + refreshed);
-
-                    if (!refreshed.equals(lastTimeRefreshedStock)) {
-                        lastTimeRefreshedStock = refreshed;
-                        break;
-                    }
-
-                    System.err.println("Sleep occurred");
-                    TimeUnit.SECONDS.sleep(5); //TODO Разобраться с задержкой метода
-                } while (true);
-
-                Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Time Series (" + interval + ")");
-
-                printFields(fields);
-            } catch (IOException | InterruptedException e) {
+                stockInfo = getPojoStockData(foundNode, StockInfoDaily.class);
+            } catch (IOException e) {
+                stockInfo = null;
                 e.printStackTrace();
             }
+
+            return stockInfo;
         }
 
-        /**
-         * Parse Digital & Crypto Currencies with
-         * CURRENCY_EXCHANGE_RATE temporal resolution.
-         */
-        public static void parseDigitalAndCryptoCurrencies() {
-            final String function = "CURRENCY_EXCHANGE_RATE";
-            final String fromCurrency = "USD";
-            final String toCurrency = "RUB";
-            JsonNode node;
+        public static StockInfo getLatestStock(String companyName) {
+            final String function = "GLOBAL_QUOTE";
+            final String datatype = "json";
+            StockInfo stockInfo;
+
+            CompanyInfo companyInfo = getSymbolFromCompanyName(companyName);
+            String symbol = companyInfo.getSymbol();
 
             try {
-                URL url = new URL("https://www.alphavantage.co/query?" +
-                        "function=" + function +
-                        "&from_currency=" + fromCurrency +
-                        "&to_currency=" + toCurrency +
+                final URL url = new URL("https://www.alphavantage.co/query" +
+                        "?function=" + function +
+                        "&symbol=" + symbol +
+                        "&datatype=" + datatype +
                         "&apikey=TF0UUHCZB8SBMXDP");
 
-                do {
-                    node = getNodeFromUrl(url);
-                    if (frequencyExcessHandler(node))
-                        return;
+                JsonNode node = getNodeFromUrl(url);
+                node = node.path("Global Quote");
+                stockInfo = getPojoStockData(node, StockInfo.class);
 
-                    final String refreshed = node.path("Realtime Currency Exchange Rate")
-                            .get("6. Last Refreshed").asText();
-
-                    //System.out.println("lastTimeRefreshedCrypto = " + lastTimeRefreshedCrypto);
-
-                    if (!refreshed.equals(lastTimeRefreshedCrypto)) {
-                        lastTimeRefreshedCrypto = refreshed;
-                        break;
-                    }
-
-                    System.err.println("Sleep occurred");
-                    TimeUnit.MILLISECONDS.sleep(250); //TODO Разобраться с задержкой метода
-                } while (true);
-
-                Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Realtime Currency Exchange Rate");
-
-                while (fields.hasNext()) {
-                    printFields(fields);
-                }
-                System.out.print(System.lineSeparator()); //blank line to separate data
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException e) {
+                stockInfo = null;
                 e.printStackTrace();
             }
+
+            return stockInfo;
+        }
+    }
+
+    private static JsonNode getNodeFromUrl(URL url) throws IOException {
+        URLConnection connection = url.openConnection();
+        String redirect = connection.getHeaderField("Location");
+
+        if (redirect != null) {
+            connection = new URL(redirect).openConnection();
         }
 
-        private static boolean frequencyExcessHandler(JsonNode node) {
-            boolean isFrequencyExcessOccurred = !Objects.isNull(node.get("Note"));
+        JsonNode node = mapper.readTree(connection.getInputStream());
 
-            if (isFrequencyExcessOccurred)
-                System.out.println("Frequency excess. " +
-                        "Alpha Vantage standard API call frequency is " +
-                        "5 calls per minute and 500 calls per day.");
+        return node;
+    }
 
-            return isFrequencyExcessOccurred;
+    private static <T> T getPojoStockData(JsonNode node, Class<T> clazz) throws IOException {
+        return mapper.treeToValue(node, clazz);
+    }
+
+    private static CompanyInfo getSymbolFromCompanyName(String companyName) {
+        final String function = "SYMBOL_SEARCH";
+        final String datatype = "json";
+        JsonNode node;
+        CompanyInfo companyInfo;
+
+        try {
+            final URL url = new URL("https://www.alphavantage.co/query" +
+                    "?function=" + function +
+                    "&keywords=" + companyName +
+                    "&datatype=" + datatype +
+                    "&apikey=TF0UUHCZB8SBMXDP");
+
+            node = getNodeFromUrl(url);
+            node = node.path("bestMatches");
+            node = node.get(0);
+            companyInfo = mapper.treeToValue(node, CompanyInfo.class);
+
+        } catch (IOException e) {
+            companyInfo = null;
+            e.printStackTrace();
         }
+
+        return companyInfo;
     }
 
     /**
@@ -156,21 +154,7 @@ public class ApiUtils {
         }
     }
 
-    private static JsonNode getNodeFromUrl(URL url) throws IOException {
-        URLConnection connection = url.openConnection();
-        String redirect = connection.getHeaderField("Location");
-
-        if (redirect != null) {
-            connection = new URL(redirect).openConnection();
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(connection.getInputStream());
-
-        return node;
-    }
-
-    private static void printFields(final Iterator<Map.Entry<String, JsonNode>> fields) {
+    private static void printField(final Iterator<Map.Entry<String, JsonNode>> fields) {
         Map.Entry<String, JsonNode> entry = fields.next();
         String name = entry.getKey();
         JsonNode value = entry.getValue();
