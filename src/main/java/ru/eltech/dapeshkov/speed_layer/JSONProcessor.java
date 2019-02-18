@@ -8,7 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 public class JSONProcessor {
@@ -64,14 +64,6 @@ public class JSONProcessor {
         private String id;
         private String opinion_authors;
 
-        public ZonedDateTime getPublish_date() {
-            return publish_date;
-        }
-
-        public void setPublish_date(ZonedDateTime publish_date) {
-            this.publish_date = publish_date;
-        }
-
         private Photo photo;
 
         public void setPhoto(Photo photo) {
@@ -84,8 +76,16 @@ public class JSONProcessor {
 
         private String project;
 
+        public LocalDateTime getPublish_date() {
+            return publish_date;
+        }
+
+        public void setPublish_date(LocalDateTime publish_date) {
+            this.publish_date = publish_date;
+        }
+
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "EEE, dd MMM yyyy HH:mm:ss Z", locale = "en_GB")
-        private ZonedDateTime publish_date;
+        private LocalDateTime publish_date;
         private String title;
 
         public void setAnons(String anons) {

@@ -3,8 +3,10 @@ package ru.eltech.dapeshkov.speed_layer;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.util.concurrent.*;
+import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class reads content from given URLs and outputs the parsed content in the files.
@@ -17,7 +19,7 @@ import java.util.concurrent.*;
 public class NewsReader {
     private final URLFilePair[] array;
     private final ScheduledExecutorService ex = Executors.newScheduledThreadPool(4); // ExecutorService that runs the tasks
-    private ZonedDateTime lastpubdate = null;
+    private LocalDateTime lastpubdate = null;
 
     /**
      * A pair of two {@link String} that is used to represent a file name and an URL name of the site.
