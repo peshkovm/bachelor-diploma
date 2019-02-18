@@ -1,4 +1,4 @@
-package ru.eltech.mapeshkov.speed_layer;
+package ru.eltech.mapeshkov;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
