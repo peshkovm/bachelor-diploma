@@ -124,22 +124,6 @@ public class Processing {
     public static void main(String[] args) {
         train(2);
 
-        JSONProcessor.Train[] arr = null;
-
-        try (FileInputStream in = new FileInputStream("train.json")) {
-            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        int a = 0;
-
-        for (JSONProcessor.Train i : arr) {
-            if (sentiment(i.getText()).equals(i.getSentiment())) {
-                a++;
-            }
-        }
-
-        System.out.println((double) a / arr.length * 100);
+        System.out.println(sentiment("Советника главы Минэкономразвития арестовали по делу о взяточничестве"));
     }
 }
