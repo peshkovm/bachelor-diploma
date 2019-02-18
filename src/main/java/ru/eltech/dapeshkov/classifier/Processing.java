@@ -99,7 +99,7 @@ public class Processing {
 
         count = arr.length;
 
-        Arrays.stream(arr).parallel().unordered().forEach(i -> {
+        Arrays.stream(arr).unordered().forEach(i -> { //TODO parallel
             String[] strings = parse(i.getText(), Processing.n);
             Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
             prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
@@ -113,7 +113,7 @@ public class Processing {
                         .reduce(0, (left, right) -> left + Math.log(right));
     }
 
-    static String sentiment(String str) {
+    static public String sentiment(String str) {
         String[] arr = parse(str, Processing.n);
 
         return Arrays.stream(category).unordered()
@@ -122,8 +122,7 @@ public class Processing {
     }
 
     public static void main(String[] args) {
-        train(2);
-
-        System.out.println(sentiment("Советника главы Минэкономразвития арестовали по делу о взяточничестве"));
+        //train(2);
+        System.out.println("end");
     }
 }

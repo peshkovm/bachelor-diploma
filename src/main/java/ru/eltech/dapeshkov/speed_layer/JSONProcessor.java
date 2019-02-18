@@ -17,6 +17,7 @@ public class JSONProcessor {
     static {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        System.out.println("JSONProcessor");
     }
 
     public static <T> T parse(String str, Class<T> cl) {
@@ -44,18 +45,7 @@ public class JSONProcessor {
 
         @Override
         public String toString() {
-            return "Item{" +
-                    "anons='" + anons + '\'' +
-                    ", authors='" + authors + '\'' +
-                    ", category='" + category + '\'' +
-                    ", fronturl='" + fronturl + '\'' +
-                    ", id='" + id + '\'' +
-                    ", opinion_authors='" + opinion_authors + '\'' +
-                    ", photo=" + photo +
-                    ", project='" + project + '\'' +
-                    ", publish_date='" + publish_date + '\'' +
-                    ", title='" + title + '\'' +
-                    '}';
+            return anons;
         }
 
         private String authors;
@@ -182,9 +172,7 @@ public class JSONProcessor {
 
         @Override
         public String toString() {
-            return "News{" +
-                    "items=" + Arrays.toString(items) +
-                    '}';
+            return Arrays.toString(items);
         }
 
         public Item[] getItems() {

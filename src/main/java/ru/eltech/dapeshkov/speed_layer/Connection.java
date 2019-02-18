@@ -19,6 +19,7 @@ class Connection implements AutoCloseable {
 
     /**
      * Initializes the instance of the {@code Connection} with given URL.
+     *
      * @param url URL of the Connection
      */
 
@@ -35,6 +36,7 @@ class Connection implements AutoCloseable {
 
     /**
      * Connects to the site (If-Modified-Since is used) and returns {@link InputStream  InputStream} of the given site content.
+     *
      * @return the data of the site.
      */
 
