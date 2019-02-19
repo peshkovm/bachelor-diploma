@@ -1,9 +1,14 @@
 package ru.eltech.dapeshkov.speed_layer;
 
+import ru.eltech.dapeshkov.classifier.Processing;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class reads content from given URLs and outputs the parsed content in the files.
@@ -14,47 +19,30 @@ import java.util.concurrent.*;
  */
 
 public class NewsReader {
-    private final URLFilePair[] array;
     private final ScheduledExecutorService ex = Executors.newScheduledThreadPool(4); // ExecutorService that runs the tasks
-
-    /**
-     * A pair of two {@link String} that is used to represent a file name and an URL name of the site.
-     * This class is used to be a parameter for {@link NewsReader constructor} so the number of resources and output files are the same.
-     */
-
-    static public class URLFilePair {
-        private final String file;
-        private final String url;
-
-        /**
-         * Initializes the instance of {@code URLFilePair}.
-         *
-         * @param file output file name
-         * @param url  URL of the site
-         */
-
-        public URLFilePair(String file, String url) {
-            this.file = file;
-            this.url = url;
-        }
-
-        public String getFile() {
-            return file;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-    }
+    private final String[] url;
+    private final String out;
 
     /**
      * Initialize the instance of {@code NewsReader}.
      *
-     * @param mas the array of {@link URLFilePair}
+     * @param url the array of {@link String}
+     * @param out the output file {@link String}
      */
 
-    public NewsReader(URLFilePair... mas) {
-        array = mas;
+    public NewsReader(String out, String... url) {
+        this.url = url;
+        this.out = out;
+        Processing.train(2);
+    }
+
+    synchronized public void write(String str, String out) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(out, true))) {
+            writer.write(str);
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -64,15 +52,22 @@ public class NewsReader {
      */
 
     public void start() {
-        for (URLFilePair a : array) {
-            Connection connection = new Connection(a.getUrl());
-            ex.scheduleAtFixedRate(() -> {
-                try (connection; BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(a.getFile(), true))) {
-                    JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
-                    bufferedWriter.write(news.toString() + "\n" + "\n");
-                    bufferedWriter.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
+        for (String a : url) {
+            Connection connection = new Connection(a);
+            ex.scheduleAtFixedRate(new Runnable() {
+                private LocalDateTime lastpubdate = null;
+
+                @Override
+                public void run() {
+                    try (connection) {
+                        JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
+                        if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
+                            lastpubdate = news.getItems()[0].getPublish_date();
+                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", out);
+                        }
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
                 }
             }, 0, 3, TimeUnit.SECONDS);
         }
