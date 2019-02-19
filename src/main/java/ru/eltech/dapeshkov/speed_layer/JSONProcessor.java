@@ -8,7 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 public class JSONProcessor {
@@ -17,6 +17,7 @@ public class JSONProcessor {
     static {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        System.out.println("JSONProcessor");
     }
 
     public static <T> T parse(String str, Class<T> cl) {
@@ -44,18 +45,7 @@ public class JSONProcessor {
 
         @Override
         public String toString() {
-            return "Item{" +
-                    "anons='" + anons + '\'' +
-                    ", authors='" + authors + '\'' +
-                    ", category='" + category + '\'' +
-                    ", fronturl='" + fronturl + '\'' +
-                    ", id='" + id + '\'' +
-                    ", opinion_authors='" + opinion_authors + '\'' +
-                    ", photo=" + photo +
-                    ", project='" + project + '\'' +
-                    ", publish_date='" + publish_date + '\'' +
-                    ", title='" + title + '\'' +
-                    '}';
+            return anons;
         }
 
         private String authors;
@@ -63,14 +53,6 @@ public class JSONProcessor {
         private String fronturl;
         private String id;
         private String opinion_authors;
-
-        public ZonedDateTime getPublish_date() {
-            return publish_date;
-        }
-
-        public void setPublish_date(ZonedDateTime publish_date) {
-            this.publish_date = publish_date;
-        }
 
         private Photo photo;
 
@@ -84,8 +66,16 @@ public class JSONProcessor {
 
         private String project;
 
+        public LocalDateTime getPublish_date() {
+            return publish_date;
+        }
+
+        public void setPublish_date(LocalDateTime publish_date) {
+            this.publish_date = publish_date;
+        }
+
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "EEE, dd MMM yyyy HH:mm:ss Z", locale = "en_GB")
-        private ZonedDateTime publish_date;
+        private LocalDateTime publish_date;
         private String title;
 
         public void setAnons(String anons) {
@@ -182,9 +172,7 @@ public class JSONProcessor {
 
         @Override
         public String toString() {
-            return "News{" +
-                    "items=" + Arrays.toString(items) +
-                    '}';
+            return Arrays.toString(items);
         }
 
         public Item[] getItems() {

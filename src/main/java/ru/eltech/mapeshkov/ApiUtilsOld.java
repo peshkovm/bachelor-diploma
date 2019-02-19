@@ -1,14 +1,15 @@
-package ru.eltech.mapeshkov.speed_layer;
+package ru.eltech.mapeshkov;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,9 +17,10 @@ import java.util.concurrent.TimeUnit;
  * <a href="https://www.alphavantage.co/documentation/">
  * <i>Alpha Vantage</i></a> site
  */
-public class ApiUtils {
+@Deprecated
+public class ApiUtilsOld {
     // Suppresses default constructor, ensuring non-instantiability.
-    private ApiUtils() {
+    private ApiUtilsOld() {
     }
 
     public static class AlphaVantageParser {
@@ -34,7 +36,7 @@ public class ApiUtils {
          */
         public static void parseStockTimeSeries() {
             final String function = "TIME_SERIES_INTRADAY";
-            final String symbol = "MSFT";
+            final String symbol = "aapl";
             final String interval = "1min";
             JsonNode node;
 
@@ -67,8 +69,80 @@ public class ApiUtils {
 
                 Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Time Series (" + interval + ")");
 
-                printFields(fields);
+                printField(fields);
             } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public static void getStockAtSpecifiedDay(Date inDate, String companyName) {
+            final String function = "TIME_SERIES_DAILY";
+            final String symbol = companyName;
+            JsonNode node;
+
+            try {
+                final URL url = new URL("https://www.alphavantage.co/query" +
+                        "?function=" + function +
+                        "&symbol=" + symbol +
+                        "&outputsize=" + "full" +
+                        "&datatype=json" +
+                        "&apikey=TF0UUHCZB8SBMXDP");
+
+                //getAllStockData(url);
+
+                node = getNodeFromUrl(url);
+
+                Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Time Series (Daily)");
+
+                while (fields.hasNext()) {
+                    Map.Entry<String, JsonNode> entry = fields.next();
+                    String name = entry.getKey();
+                    JsonNode value = entry.getValue();
+
+                    //System.out.println(name + ":" + value);
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date date = sdf.parse(name);
+
+                    if (inDate.equals(date)) {
+                        System.out.println(date);
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(date);
+                        int year = calendar.get(Calendar.YEAR);
+                        int month = calendar.get(Calendar.MONTH);
+                        int day = calendar.get(Calendar.DAY_OF_MONTH);
+                        break;
+                    }
+                }
+            } catch (ParseException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public static void getLatestStock(String companyName) {
+            final String function = "GLOBAL_QUOTE";
+            final String datatype = "json";
+            JsonNode node;
+
+            try {
+                final URL url = new URL("https://www.alphavantage.co/query" +
+                        "?function=" + function +
+                        "&symbol=" + companyName +
+                        "&datatype=" + datatype +
+                        "&apikey=TF0UUHCZB8SBMXDP");
+
+                node = getNodeFromUrl(url);
+
+                Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Global Quote");
+
+                while (fields.hasNext()) {
+                    Map.Entry<String, JsonNode> entry = fields.next();
+                    String name = entry.getKey();
+                    JsonNode value = entry.getValue();
+
+                    System.out.println(name + ": " + value);
+                }
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -112,10 +186,25 @@ public class ApiUtils {
                 Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Realtime Currency Exchange Rate");
 
                 while (fields.hasNext()) {
-                    printFields(fields);
+                    printField(fields);
                 }
                 System.out.print(System.lineSeparator()); //blank line to separate data
             } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void getAllStockData(final URL url) {
+            JsonNode node;
+
+            try {
+                node = getNodeFromUrl(url);
+
+                Iterator<Map.Entry<String, JsonNode>> fields = getFields(node, "Time Series (Daily)");
+
+                while (fields.hasNext())
+                    printField(fields);
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -170,7 +259,7 @@ public class ApiUtils {
         return node;
     }
 
-    private static void printFields(final Iterator<Map.Entry<String, JsonNode>> fields) {
+    private static void printField(final Iterator<Map.Entry<String, JsonNode>> fields) {
         Map.Entry<String, JsonNode> entry = fields.next();
         String name = entry.getKey();
         JsonNode value = entry.getValue();
