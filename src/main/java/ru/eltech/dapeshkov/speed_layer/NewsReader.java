@@ -1,6 +1,7 @@
 package ru.eltech.dapeshkov.speed_layer;
 
 import ru.eltech.dapeshkov.classifier.Processing;
+import ru.eltech.mapeshkov.ApiUtils;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -63,7 +64,7 @@ public class NewsReader {
                         JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
                         if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
                             lastpubdate = news.getItems()[0].getPublish_date();
-                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", out);
+                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + ApiUtils.AlphaVantageParser.getLatestStock("Google") + "\n" + "\n", out);
                         }
                     } catch (NullPointerException e) {
                         e.printStackTrace();
