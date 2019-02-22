@@ -17,7 +17,6 @@ public class JSONProcessor {
     static {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        System.out.println("JSONProcessor");
     }
 
     public static <T> T parse(String str, Class<T> cl) {

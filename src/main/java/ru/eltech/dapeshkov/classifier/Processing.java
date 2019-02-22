@@ -7,27 +7,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Processing {
 
-    private static Map<Pair, Double> likelihood = Collections.synchronizedMap(new HashMap<Pair, Double>());
-    private static Map<String, Double> prior_probability = Collections.synchronizedMap(new HashMap<String, Double>());
+    private static final Map<Pair, Double> likelihood = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, Double> prior_probability = Collections.synchronizedMap(new HashMap<>());
     private static final HashSet<String> hash = new HashSet<>();
     private static int count = 0;
     private static int n;
     static final private String[] category = {"positive", "negative", "neutral"};
 
     static {
-        try {
-            Files.lines(Paths.get("stopwatch.txt")).forEach(hash::add);
+        try (Stream<String> lines = Files.lines(Paths.get("stopwatch.txt"))) {
+            lines.forEach(hash::add);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private static class Pair {
-        String word;
-        String category;
+        final String word;
+        final String category;
 
         @Override
         public boolean equals(Object o) {
@@ -97,7 +98,7 @@ public class Processing {
             e.printStackTrace();
         }
 
-        count = arr.length;
+        count = Objects.requireNonNull(arr).length;
 
         Arrays.stream(arr).unordered().forEach(i -> { //TODO parallel
             String[] strings = parse(i.getText(), Processing.n);
