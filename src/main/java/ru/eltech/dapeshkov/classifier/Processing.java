@@ -66,7 +66,7 @@ public class Processing {
         }
     }
 
-    static String[] parse(String str, int n) {
+    private static String[] parse(String str, int n) {
         String[] res = str.toLowerCase().split("[^\\p{L}]+");
         res = Arrays.stream(res).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
 
@@ -75,7 +75,7 @@ public class Processing {
         return res;
     }
 
-    static String[] ngram(String[] arr, int n) {
+    private static String[] ngram(String[] arr, int n) {
         String[] res = new String[arr.length - n + 1];
         for (int i = 0; i < arr.length - n + 1; i++) {
             StringBuilder str = new StringBuilder();
@@ -88,6 +88,7 @@ public class Processing {
     }
 
     static public void train(int n) {
+
         Processing.n = n;
 
         JSONProcessor.Train[] arr = null;
@@ -100,14 +101,14 @@ public class Processing {
 
         count = Objects.requireNonNull(arr).length;
 
-        Arrays.stream(arr).unordered().forEach(i -> { //TODO parallel
+        Arrays.stream(arr).unordered().forEach(i -> {
             String[] strings = parse(i.getText(), Processing.n);
             Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
             prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
         });
     }
 
-    static Double classify_cat(String str, String[] arr) {
+    private static Double classify_cat(String str, String[] arr) {
         return Math.log(prior_probability.get(str) / count) +
                 Arrays.stream(arr).unordered()
                         .mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, str), 0d) + 1) / (prior_probability.get(str) + likelihood.size()))
@@ -123,7 +124,5 @@ public class Processing {
     }
 
     public static void main(String[] args) {
-        //train(2);
-        System.out.println("end");
     }
 }
