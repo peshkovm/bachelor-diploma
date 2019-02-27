@@ -2,9 +2,9 @@ package ru.eltech.dapeshkov.speed_layer;
 
 import ru.eltech.dapeshkov.classifier.Processing;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -47,6 +47,17 @@ public class NewsReader {
         }
     }
 
+    synchronized private void write(String str, Socket sink) {
+        try (PrintWriter writer = new PrintWriter(
+                new BufferedWriter(
+                        new OutputStreamWriter(sink.getOutputStream())), true)) {
+
+            writer.println(str);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * This method requests all given sites and outputs the contents to the given files.
      * Most of the time this method should be invoked only once.
@@ -54,6 +65,20 @@ public class NewsReader {
      */
 
     public void start() {
+        /////////////////////////////////
+        int port = 5555;
+        Socket sinkSocket = null;
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Wait for socket accept");
+            sinkSocket = serverSocket.accept();
+            System.out.println("Socket accepted");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final Socket finalSinkSocket = sinkSocket;
+        /////////////////////////////////
+
         for (String a : url) {
             Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
             ex.scheduleAtFixedRate(new Runnable() {
@@ -66,7 +91,7 @@ public class NewsReader {
                         if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
                             lastpubdate = news.getItems()[0].getPublish_date();
                             Item item = new Item(news.getItems()[0].toString(), Processing.sentiment(news.getItems()[0].toString()), a);
-                            write(JSONProcessor.write(item) + "/n", out);
+                            write(JSONProcessor.write(item) + "/n", Objects.requireNonNull(finalSinkSocket));
                         }
                     } catch (NullPointerException e) {
                         e.printStackTrace();
@@ -74,6 +99,12 @@ public class NewsReader {
                 }
             }, 0, 3, TimeUnit.SECONDS);
         }
+
+/*        try {
+            sinkSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
     }
 
     public static class Item {
