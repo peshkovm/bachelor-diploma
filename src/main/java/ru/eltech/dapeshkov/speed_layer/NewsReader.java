@@ -2,9 +2,10 @@ package ru.eltech.dapeshkov.speed_layer;
 
 import ru.eltech.dapeshkov.classifier.Processing;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,10 +37,21 @@ public class NewsReader {
         Processing.train(2);
     }
 
-    synchronized public void write(String str, String out) {
+    synchronized private void write(String str, String out) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(out, true))) {
             writer.write(str);
             writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    synchronized private void write(String str, Socket sink) {
+        try {
+            PrintWriter writer = new PrintWriter(
+                    new BufferedWriter(
+                            new OutputStreamWriter(sink.getOutputStream())), true);
+            writer.println(str);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -52,6 +64,20 @@ public class NewsReader {
      */
 
     public void start() {
+        /////////////////////////////////
+        int port = 5555;
+        Socket sinkSocket = null;
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Wait for socket accept");
+            sinkSocket = serverSocket.accept();
+            System.out.println("Socket accepted");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final Socket finalSinkSocket = sinkSocket;
+        /////////////////////////////////
+
         for (String a : url) {
             Connection connection = new Connection(a);
             ex.scheduleAtFixedRate(new Runnable() {
@@ -63,6 +89,9 @@ public class NewsReader {
                         JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
                         if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
                             lastpubdate = news.getItems()[0].getPublish_date();
+                            //write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", out);
+                            //Write to socket
+                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", finalSinkSocket);
                             write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", out);
                         }
                     } catch (NullPointerException e) {
@@ -71,5 +100,11 @@ public class NewsReader {
                 }
             }, 0, 3, TimeUnit.SECONDS);
         }
+
+/*        try {
+            sinkSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
     }
 }
