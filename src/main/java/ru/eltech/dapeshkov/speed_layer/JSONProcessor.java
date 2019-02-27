@@ -2,6 +2,7 @@ package ru.eltech.dapeshkov.speed_layer;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -37,6 +38,16 @@ public class JSONProcessor {
             e.printStackTrace();
         }
         return json;
+    }
+
+    public static <T> String write(T obj) {
+        String res=null;
+        try {
+            res = mapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return res;
     }
 
     static class Item {

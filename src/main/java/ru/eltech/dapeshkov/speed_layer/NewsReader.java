@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,9 +35,10 @@ public class NewsReader {
         this.url = url;
         this.out = out;
         Processing.train(2);
+        System.out.println("Ready");
     }
 
-    synchronized public void write(String str, String out) {
+    synchronized private void write(String str, String out) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(out, true))) {
             writer.write(str);
             writer.flush();
@@ -63,13 +65,74 @@ public class NewsReader {
                         JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
                         if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
                             lastpubdate = news.getItems()[0].getPublish_date();
-                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + "\n", out);
+                            Item item = new Item(news.getItems()[0].toString(), Processing.sentiment(news.getItems()[0].toString()), a);
+                            write(JSONProcessor.write(item) + "/n", out);
                         }
                     } catch (NullPointerException e) {
                         e.printStackTrace();
                     }
                 }
             }, 0, 3, TimeUnit.SECONDS);
+        }
+    }
+
+    public static class Item {
+        private String news;
+        private String sentiment;
+        private String company_name;
+
+        @Override
+        public String toString() {
+            return "Item{" +
+                    "news='" + news + '\'' +
+                    ", sentiment='" + sentiment + '\'' +
+                    ", company_name='" + company_name + '\'' +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Item item = (Item) o;
+            return Objects.equals(news, item.news) &&
+                    Objects.equals(sentiment, item.sentiment) &&
+                    Objects.equals(company_name, item.company_name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(news, sentiment, company_name);
+        }
+
+        public Item(String news, String sentiment, String company_name) {
+            this.news = news;
+            this.sentiment = sentiment;
+            this.company_name = company_name;
+        }
+
+        public void setNews(String news) {
+            this.news = news;
+        }
+
+        public void setSentiment(String sentiment) {
+            this.sentiment = sentiment;
+        }
+
+        public void setCompany_name(String company_name) {
+            this.company_name = company_name;
+        }
+
+        public String getNews() {
+            return news;
+        }
+
+        public String getSentiment() {
+            return sentiment;
+        }
+
+        public String getCompany_name() {
+            return company_name;
         }
     }
 }
