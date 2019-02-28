@@ -176,7 +176,7 @@ public class JSONProcessor {
     public static class News {
         private Item[] items;
 
-        public void setItems(Item[] items) {
+        public void setItems(Item... items) {
             this.items = items;
         }
 

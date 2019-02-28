@@ -13,7 +13,7 @@ public class Processing {
 
     private static final Map<Pair, Double> likelihood = Collections.synchronizedMap(new HashMap<>());
     private static final Map<String, Double> prior_probability = Collections.synchronizedMap(new HashMap<>());
-    private static final HashSet<String> hash = new HashSet<>();
+    private static final Set<String> hash = new HashSet<>();
     private static int count = 0;
     private static int n;
     static final private String[] category = {"positive", "negative", "neutral"};
@@ -108,7 +108,7 @@ public class Processing {
         });
     }
 
-    private static Double classify_cat(String str, String[] arr) {
+    private static Double classify_cat(String str, String... arr) {
         return Math.log(prior_probability.get(str) / count) +
                 Arrays.stream(arr).unordered()
                         .mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, str), 0d) + 1) / (prior_probability.get(str) + likelihood.size()))

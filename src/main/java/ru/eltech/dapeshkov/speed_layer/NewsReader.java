@@ -48,10 +48,10 @@ public class NewsReader {
     }
 
     synchronized private void write(String str, Socket sink) {
-        try (PrintWriter writer = new PrintWriter(
-                new BufferedWriter(
-                        new OutputStreamWriter(sink.getOutputStream())), true)) {
-
+        try {
+            PrintWriter writer = new PrintWriter(
+                    new BufferedWriter(
+                            new OutputStreamWriter(sink.getOutputStream())), true);
             writer.println(str);
         } catch (IOException e) {
             e.printStackTrace();
