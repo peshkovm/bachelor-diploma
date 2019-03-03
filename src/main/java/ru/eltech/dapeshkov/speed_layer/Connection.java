@@ -23,12 +23,11 @@ class Connection implements AutoCloseable {
      * @param url URL of the Connection
      */
 
-    Connection(String url) {
-        URL url1;
+    Connection(final String url) {
+        URL url1 = null;
         try {
             url1 = new URL(url);
         } catch (MalformedURLException e) {
-            url1 = null;
             e.printStackTrace();
         }
         this.url = url1;
