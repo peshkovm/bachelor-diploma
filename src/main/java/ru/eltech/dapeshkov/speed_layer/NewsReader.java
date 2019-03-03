@@ -31,14 +31,14 @@ public class NewsReader {
      * @param out the output file {@link String}
      */
 
-    public NewsReader(String out, String... url) {
+    public NewsReader(final String out, final String... url) {
         this.url = url;
         this.out = out;
         Processing.train(2);
         System.out.println("Ready");
     }
 
-    synchronized private void write(String str, String out) {
+    /*synchronized void write(final String str, final String out) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(out, true))) {
             writer.write(str);
             writer.flush();
@@ -47,14 +47,22 @@ public class NewsReader {
         }
     }
 
-    synchronized private void write(String str, Socket sink) {
+    synchronized void write(final String str, final Socket sink) {
         try {
-            PrintWriter writer = new PrintWriter(
+            final PrintWriter writer = new PrintWriter(
                     new BufferedWriter(
                             new OutputStreamWriter(sink.getOutputStream())), true);
             writer.println(str);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }*/
+
+    synchronized void write(final String str, final OutputStream out) {
+        try (final PrintWriter writer = new PrintWriter(
+                new BufferedWriter(
+                        new OutputStreamWriter(out)), true)) {
+            writer.println(str);
         }
     }
 
@@ -66,10 +74,10 @@ public class NewsReader {
 
     public void start() {
         /////////////////////////////////
-        int port = 5555;
+        final int port = 5555;
         Socket sinkSocket = null;
         try {
-            ServerSocket serverSocket = new ServerSocket(port);
+            final ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("Wait for socket accept");
             sinkSocket = serverSocket.accept();
             System.out.println("Socket accepted");
@@ -79,21 +87,21 @@ public class NewsReader {
         final Socket finalSinkSocket = sinkSocket;
         /////////////////////////////////
 
-        for (String a : url) {
-            Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
+        for (final String a : url) {
+            final Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
             ex.scheduleAtFixedRate(new Runnable() {
                 private LocalDateTime lastpubdate = null;
 
                 @Override
                 public void run() {
-                    try (connection) {
-                        JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
-                        if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
+                    try (final Connection con = connection) {
+                        final JSONProcessor.News news = JSONProcessor.parse(con.get(), JSONProcessor.News.class);
+                        if (news != null && (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate))) {
                             lastpubdate = news.getItems()[0].getPublish_date();
-                            Item item = new Item(news.getItems()[0].toString(), Processing.sentiment(news.getItems()[0].toString()), a);
-                            write(JSONProcessor.write(item) + "/n", Objects.requireNonNull(finalSinkSocket));
+                            final Item item = new Item(news.getItems()[0].toString(), Processing.sentiment(news.getItems()[0].toString()), a);
+                            write(JSONProcessor.write(item) + "/n", Objects.requireNonNull(finalSinkSocket).getOutputStream());
                         }
-                    } catch (NullPointerException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -122,10 +130,10 @@ public class NewsReader {
         }
 
         @Override
-        public boolean equals(Object o) {
+        public boolean equals(final Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Item item = (Item) o;
+            final Item item = (Item) o;
             return Objects.equals(news, item.news) &&
                     Objects.equals(sentiment, item.sentiment) &&
                     Objects.equals(company_name, item.company_name);
@@ -136,21 +144,21 @@ public class NewsReader {
             return Objects.hash(news, sentiment, company_name);
         }
 
-        public Item(String news, String sentiment, String company_name) {
+        public Item(final String news, final String sentiment, final String company_name) {
             this.news = news;
             this.sentiment = sentiment;
             this.company_name = company_name;
         }
 
-        public void setNews(String news) {
+        public void setNews(final String news) {
             this.news = news;
         }
 
-        public void setSentiment(String sentiment) {
+        public void setSentiment(final String sentiment) {
             this.sentiment = sentiment;
         }
 
-        public void setCompany_name(String company_name) {
+        public void setCompany_name(final String company_name) {
             this.company_name = company_name;
         }
 

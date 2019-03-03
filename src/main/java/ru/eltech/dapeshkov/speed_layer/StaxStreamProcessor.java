@@ -24,16 +24,16 @@ class StaxStreamProcessor {
      * @param file name of the output file.
      */
 
-    void parse(InputStream is, String file) {
+    void parse(final InputStream is, final String file) {
         XMLStreamReader reader = null; //StAX
         ZonedDateTime time = null; //date of the item
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file,true))) {
             if (is != null) {
                 reader = FACTORY.createXMLStreamReader(is);
                 while (reader.hasNext()) {
-                    String str = getElement(reader, "item");
+                    final String str = getElement(reader, "item");
                     if (str != null) {
-                        ZonedDateTime pubdate = getDate(str); //gets the date of the item
+                        final ZonedDateTime pubdate = getDate(str); //gets the date of the item
                         if (lastpubdate == null || lastpubdate.isBefore(pubdate)) { //if it is a new item (the date of the item is after the lastpubdate)
                             if (time == null || pubdate.isAfter(time)) {//time will be the max date of the items in given Connection
                                 time = pubdate;
@@ -68,8 +68,8 @@ class StaxStreamProcessor {
      * @throws XMLStreamException
      */
 
-    private String getElement(XMLStreamReader reader, String element) throws XMLStreamException {
-        StringBuilder str = new StringBuilder();
+    private String getElement(final XMLStreamReader reader, final String element) throws XMLStreamException {
+        final StringBuilder str = new StringBuilder();
         while (reader.hasNext()) {
             if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getLocalName().equals(element))
                 break;
@@ -94,9 +94,9 @@ class StaxStreamProcessor {
      * @param str the content of the item
      * @return the date of the item
      */
-    private ZonedDateTime getDate(String str) {
-        Pattern pattern = Pattern.compile("pubDate (.*)"); //gets the content of the pubdate element in RFC-822 format
-        Matcher matcher = pattern.matcher(str);
+    private ZonedDateTime getDate(final String str) {
+        final Pattern pattern = Pattern.compile("pubDate (.*)"); //gets the content of the pubdate element in RFC-822 format
+        final Matcher matcher = pattern.matcher(str);
         matcher.find();
         return ZonedDateTime.parse(matcher.group(1), DateTimeFormatter.RFC_1123_DATE_TIME); //converts from the RFC-822
     }
