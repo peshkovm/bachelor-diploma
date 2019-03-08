@@ -5,22 +5,19 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
-public class B {
-    public static void main(String[] args) {
-        System.setProperty("hadoop.home.dir", "ru.eltech.spark.C:\\winutils\\");
+public class Streaming {
+
+    private Streaming() {
+
+    }
+
+    public static void start() {
+        System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkConf conf = new SparkConf().setMaster("local").setAppName("NetworkWordCount");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
         JavaDStream<String> lines = jssc.textFileStream("files");
-
-        lines.foreachRDD(length -> {
-            if (!length.isEmpty())
-                System.out.println(length.first().length());
-            else
-                System.out.println("empty");
-        });
-
-        //lineLengths.print();
+        lines.foreachRDD(System.out::println);
 
         jssc.start();
         try {
