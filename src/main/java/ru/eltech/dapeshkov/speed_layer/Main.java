@@ -6,7 +6,7 @@ package ru.eltech.dapeshkov.speed_layer;
 
 public class Main {
     public static void main(final String[] args) {
-        final NewsReader reader = new NewsReader("out.txt", "Google", "Google");
+        final NewsReader reader = new NewsReader("files/", "Google", "Google");
         reader.start();
     }
 }
