@@ -1,15 +1,14 @@
 package ru.eltech.dapeshkov.speed_layer;
 
 import ru.eltech.dapeshkov.classifier.Processing;
-import ru.eltech.mapeshkov.ApiUtils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class reads content from given URLs and outputs the parsed content in the files.
@@ -23,6 +22,7 @@ public class NewsReader {
     private final ScheduledExecutorService ex = Executors.newScheduledThreadPool(4); // ExecutorService that runs the tasks
     private final String[] url;
     private final String out;
+    private static final AtomicInteger i = new AtomicInteger(0);
 
     /**
      * Initialize the instance of {@code NewsReader}.
@@ -31,18 +31,18 @@ public class NewsReader {
      * @param out the output file {@link String}
      */
 
-    public NewsReader(String out, String... url) {
+    public NewsReader(final String out, final String... url) {
         this.url = url;
         this.out = out;
         Processing.train(2);
+        System.out.println("Ready");
     }
 
-    synchronized public void write(String str, String out) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(out, true))) {
-            writer.write(str);
-            writer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+    synchronized void write(final String str, final OutputStream out) {
+        try (final PrintWriter writer = new PrintWriter(
+                new BufferedWriter(
+                        new OutputStreamWriter(out)), true)) {
+            writer.println(str);
         }
     }
 
@@ -53,24 +53,85 @@ public class NewsReader {
      */
 
     public void start() {
-        for (String a : url) {
-            Connection connection = new Connection(a);
+        for (final String a : url) {
+            final Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
             ex.scheduleAtFixedRate(new Runnable() {
                 private LocalDateTime lastpubdate = null;
 
                 @Override
                 public void run() {
-                    try (connection) {
-                        JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
-                        if (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate)) {
+                    try (final Connection con = connection) {
+                        final JSONProcessor.News news = JSONProcessor.parse(con.get(), JSONProcessor.News.class);
+                        if (news != null && (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate))) {
                             lastpubdate = news.getItems()[0].getPublish_date();
-                            write(news.toString() + " " + Processing.sentiment(news.toString()) + "\n" + ApiUtils.AlphaVantageParser.getLatestStock("Google") + "\n" + "\n", out);
+                            final Item item = new Item(news.getItems()[0].toString(), Processing.sentiment(news.getItems()[0].toString()), a);
+                            write(JSONProcessor.write(item) + "/n", new FileOutputStream(out + i.incrementAndGet() + ".txt"));
                         }
-                    } catch (NullPointerException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }, 0, 3, TimeUnit.SECONDS);
+        }
+    }
+
+    public static class Item {
+        private String news;
+        private String sentiment;
+        private String company_name;
+
+        @Override
+        public String toString() {
+            return "Item{" +
+                    "news='" + news + '\'' +
+                    ", sentiment='" + sentiment + '\'' +
+                    ", company_name='" + company_name + '\'' +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final Item item = (Item) o;
+            return Objects.equals(news, item.news) &&
+                    Objects.equals(sentiment, item.sentiment) &&
+                    Objects.equals(company_name, item.company_name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(news, sentiment, company_name);
+        }
+
+        public Item(final String news, final String sentiment, final String company_name) {
+            this.news = news;
+            this.sentiment = sentiment;
+            this.company_name = company_name;
+        }
+
+        public void setNews(final String news) {
+            this.news = news;
+        }
+
+        public void setSentiment(final String sentiment) {
+            this.sentiment = sentiment;
+        }
+
+        public void setCompany_name(final String company_name) {
+            this.company_name = company_name;
+        }
+
+        public String getNews() {
+            return news;
+        }
+
+        public String getSentiment() {
+            return sentiment;
+        }
+
+        public String getCompany_name() {
+            return company_name;
         }
     }
 }

@@ -2,6 +2,7 @@ package ru.eltech.dapeshkov.speed_layer;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -17,27 +18,44 @@ public class JSONProcessor {
     static {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        System.out.println("JSONProcessor");
     }
 
-    public static <T> T parse(String str, Class<T> cl) {
+    private JSONProcessor() {
+
+    }
+
+    public static <T> T parse(final String str, final Class<T> cl) {
         T json = null;
-        try {
-            json = mapper.readValue(str, cl);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (str != null) {
+            try {
+                json = mapper.readValue(str, cl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return json;
     }
 
-    public static <T> T parse(InputStream in, Class<T> cl) {
+    public static <T> T parse(final InputStream in, final Class<T> cl) {
         T json = null;
-        try {
-            json = mapper.readValue(in, cl);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (in != null) {
+            try {
+                json = mapper.readValue(in, cl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return json;
+    }
+
+    public static <T> String write(final T obj) {
+        String res = null;
+        try {
+            res = mapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return res;
     }
 
     static class Item {
@@ -56,7 +74,7 @@ public class JSONProcessor {
 
         private Photo photo;
 
-        public void setPhoto(Photo photo) {
+        public void setPhoto(final Photo photo) {
             this.photo = photo;
         }
 
@@ -70,7 +88,7 @@ public class JSONProcessor {
             return publish_date;
         }
 
-        public void setPublish_date(LocalDateTime publish_date) {
+        public void setPublish_date(final LocalDateTime publish_date) {
             this.publish_date = publish_date;
         }
 
@@ -78,35 +96,35 @@ public class JSONProcessor {
         private LocalDateTime publish_date;
         private String title;
 
-        public void setAnons(String anons) {
+        public void setAnons(final String anons) {
             this.anons = anons;
         }
 
-        public void setAuthors(String authors) {
+        public void setAuthors(final String authors) {
             this.authors = authors;
         }
 
-        public void setCategory(String category) {
+        public void setCategory(final String category) {
             this.category = category;
         }
 
-        public void setFronturl(String fronturl) {
+        public void setFronturl(final String fronturl) {
             this.fronturl = fronturl;
         }
 
-        public void setId(String id) {
+        public void setId(final String id) {
             this.id = id;
         }
 
-        public void setOpinion_authors(String opinion_authors) {
+        public void setOpinion_authors(final String opinion_authors) {
             this.opinion_authors = opinion_authors;
         }
 
-        public void setProject(String project) {
+        public void setProject(final String project) {
             this.project = project;
         }
 
-        public void setTitle(String title) {
+        public void setTitle(final String title) {
             this.title = title;
         }
 
@@ -153,7 +171,7 @@ public class JSONProcessor {
 
         private String url;
 
-        public void setUrl(String url) {
+        public void setUrl(final String url) {
             this.url = url;
         }
 
@@ -166,7 +184,7 @@ public class JSONProcessor {
     public static class News {
         private Item[] items;
 
-        public void setItems(Item[] items) {
+        public void setItems(final Item... items) {
             this.items = items;
         }
 
@@ -197,7 +215,7 @@ public class JSONProcessor {
             return text;
         }
 
-        public void setText(String text) {
+        public void setText(final String text) {
             this.text = text;
         }
 
@@ -205,7 +223,7 @@ public class JSONProcessor {
             return sentiment;
         }
 
-        public void setSentiment(String sentiment) {
+        public void setSentiment(final String sentiment) {
             this.sentiment = sentiment;
         }
     }
