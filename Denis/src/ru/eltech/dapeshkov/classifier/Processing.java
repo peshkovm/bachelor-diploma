@@ -20,7 +20,7 @@ public class Processing {
     static final private String[] category = {"positive", "negative", "neutral"};
 
     static {
-        try (Stream<String> lines = Files.lines(Paths.get("stopwatch.txt"))) {
+        try (Stream<String> lines = Files.lines(Paths.get("Denis/stopwatch.txt"))) {
             lines.forEach(hash::add);
         } catch (IOException e) {
             e.printStackTrace();
@@ -98,7 +98,7 @@ public class Processing {
 
         JSONProcessor.Train[] arr = null;
 
-        try (FileInputStream in = new FileInputStream("train.json")) {
+        try (FileInputStream in = new FileInputStream("Denis/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
