@@ -20,7 +20,7 @@ public class Processing {
     static final private String[] category = {"positive", "negative", "neutral"};
 
     static {
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("Resources/stopwatch.txt"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
             lines.forEach(hash::add);
         }
     }
@@ -96,7 +96,7 @@ public class Processing {
 
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("Resources/train1.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -127,5 +127,6 @@ public class Processing {
     }
 
     public static void main(final String[] args) {
+        train(2);
     }
 }
