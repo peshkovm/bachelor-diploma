@@ -1,5 +1,6 @@
 package ru.eltech.mapeshkov.spark;
 
+import org.apache.spark.mllib.clustering.KMeansModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.jfree.chart.ChartPanel;
@@ -17,6 +18,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import java.awt.*;
 import java.util.List;
+// Load and parse the data
 
 public class CombinedPlot extends ApplicationFrame {
     /**
