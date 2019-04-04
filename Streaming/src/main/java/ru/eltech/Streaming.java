@@ -1,6 +1,7 @@
 package ru.eltech;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.streaming.OutputMode;
@@ -23,6 +24,7 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.count;
 
 public class Streaming {
 
@@ -107,20 +109,19 @@ public class Streaming {
                 .csv("files/")
                 .toDF("company", "sentiment", "year", "month", "day", "today_stock", "id");
 
-        Dataset<Row> windowedDataset = rowDataset.withWatermark("id", "5 minutes").groupBy(functions.window(col("id"), "6 minutes", "1 minute"),
+        Dataset<Row> windowedDataset = rowDataset.withWatermark("id", "0 seconds").groupBy(functions.window(col("id"), "5 minutes", "1 minute"),
                 col("company"),
                 col("sentiment"),
                 col("year"),
                 col("month"),
                 col("day"),
                 col("today_stock"),
-                col("id"))
-                .count();
+                col("id")).count();
 
-        StreamingQuery query = windowedDataset.writeStream()
+        StreamingQuery query = windowedDataset
+                .writeStream()
                 .outputMode("append")
                 .format("console")
-                .option("truncate", "false")
                 .start();
 
         try {
