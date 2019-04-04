@@ -3,6 +3,14 @@ package ru.eltech;
 import org.apache.spark.SparkConf;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.streaming.OutputMode;
+import org.apache.spark.sql.streaming.StreamingQuery;
+import org.apache.spark.sql.streaming.StreamingQueryException;
+import org.apache.spark.sql.streaming.Trigger;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
@@ -17,7 +25,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class Streaming {
 
     public static void main(String[] args) {
-        startRDD();
+        startStructured();
     }
 
     public static void startRDD() {
@@ -67,6 +75,45 @@ public class Streaming {
         try {
             jssc.awaitTermination();
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void startStructured() {
+
+        System.setProperty("hadoop.home.dir", "C:\\winutils\\");
+
+
+        SparkSession spark = SparkSession.builder().master("local[2]").getOrCreate();
+
+        StructType schema = new StructType(new StructField[]{
+                new StructField("company", DataTypes.StringType, false, Metadata.empty()),
+                new StructField("sentiment", DataTypes.StringType, false, Metadata.empty()),
+                new StructField("year", DataTypes.IntegerType, false, Metadata.empty()),
+                new StructField("month", DataTypes.IntegerType, false, Metadata.empty()),
+                new StructField("day", DataTypes.IntegerType, false, Metadata.empty()),
+                new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
+                new StructField("id", DataTypes.TimestampType, false, Metadata.empty()),
+        });
+
+        Dataset<Row> rowDataset = spark.readStream()
+                .schema(schema)
+                .option("delimiter", ",")
+                .option("charset", "UTF-8")
+                .option("includeTimestamp", true)
+                .csv("files/")
+                .toDF("company", "sentiment", "year", "month", "day", "today_stock", "id");
+
+        Dataset<Row> windowedDataset = rowDataset.groupBy("today_stock").count();
+
+        StreamingQuery query = windowedDataset.writeStream()
+                .outputMode("update")
+                .format("console")
+                .start();
+
+        try {
+            query.awaitTermination();
+        } catch (StreamingQueryException e) {
             e.printStackTrace();
         }
     }
