@@ -16,15 +16,20 @@ public class Main {
         //reader.start();
         int i = 0;
         Random rand = new Random();
-        LocalDateTime min = LocalDateTime.of(2019, 4, 1, 20, 46, 0, 0);
+        LocalDateTime min = LocalDateTime.of(1970, 1, 1, 3, 0, 0, 0);
         while (true) {
+            BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                String inputString = bufferRead.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             try (final PrintWriter writer = new PrintWriter(
                     new BufferedWriter(
                             new OutputStreamWriter(new FileOutputStream("files/" + i++ + ".txt"))), true)) {
                 writer.println("Google,neutral,2019,3,1," + rand.nextInt(100) + "," + Timestamp.valueOf(min));
                 min = min.plusMinutes(1);
-                Thread.sleep(1000);
-            } catch (FileNotFoundException | InterruptedException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
