@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import static org.apache.spark.sql.functions.col;
+
 public class Streaming {
 
     public static void main(String[] args) {
@@ -85,6 +87,8 @@ public class Streaming {
 
 
         SparkSession spark = SparkSession.builder().master("local[2]").getOrCreate();
+        spark.sparkContext().setLogLevel("ERROR");
+        spark.sparkContext().conf().set("spark.sql.shuffle.partitions", "1");
 
         StructType schema = new StructType(new StructField[]{
                 new StructField("company", DataTypes.StringType, false, Metadata.empty()),
@@ -100,15 +104,23 @@ public class Streaming {
                 .schema(schema)
                 .option("delimiter", ",")
                 .option("charset", "UTF-8")
-                .option("includeTimestamp", true)
                 .csv("files/")
                 .toDF("company", "sentiment", "year", "month", "day", "today_stock", "id");
 
-        Dataset<Row> windowedDataset = rowDataset.groupBy("today_stock").count();
+        Dataset<Row> windowedDataset = rowDataset.withWatermark("id", "5 minutes").groupBy(functions.window(col("id"), "6 minutes", "1 minute"),
+                col("company"),
+                col("sentiment"),
+                col("year"),
+                col("month"),
+                col("day"),
+                col("today_stock"),
+                col("id"))
+                .count();
 
         StreamingQuery query = windowedDataset.writeStream()
-                .outputMode("update")
+                .outputMode("append")
                 .format("console")
+                .option("truncate", "false")
                 .start();
 
         try {
