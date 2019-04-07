@@ -5,7 +5,7 @@ import java.nio.file.Path;
 
 public final class WatcherSingleton {
 
-    private static volatile Watcher watcher;
+    private static volatile Watcher watcher=null;
 
     private WatcherSingleton() {
 
