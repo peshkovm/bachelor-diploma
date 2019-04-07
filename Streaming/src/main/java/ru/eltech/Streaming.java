@@ -15,10 +15,12 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import ru.eltech.dapeshkov.speed_layer.Item;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
@@ -43,24 +45,17 @@ public class Streaming {
 
         JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
 
-        ArrayBlockingQueue<Schema> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
+        ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
-        JavaDStream<Schema> schemaJavaDStream = stringJavaDStream.map(str -> {
+        JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
-            Schema record = new Schema();
-            record.setCompany(split[0]);
-            record.setSentiment(split[1]);
-            record.setYear(Integer.valueOf(split[2]));
-            record.setMonth(Integer.valueOf(split[3]));
-            record.setDay(Integer.valueOf(split[4]));
-            record.setToday_stock(Double.valueOf(split[5]));
-            return record;
+            return new Item(split[0], split[1], LocalDateTime.parse(split[2]), Double.valueOf(split[3]));
         });
 
         schemaJavaDStream.foreachRDD(rdd -> { //driver
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
-            rdd.sortBy().collect().forEach(str -> { //driver
+            rdd.sortBy(Item::getDateTime,false,1).collect().forEach(str -> { //driver
                 System.out.println(str);
                 //ArrayBlockingQueue<Schema> arrayBlockingQueue = ArrayBlockingQueueSinglton.getHelper();
                 /*String[] split = str.split(",");
