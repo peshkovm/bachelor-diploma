@@ -27,7 +27,7 @@ public class Main {
             try (final PrintWriter writer = new PrintWriter(
                     new BufferedWriter(
                             new OutputStreamWriter(new FileOutputStream("files/" + i++ + ".txt"))), true)) {
-                writer.println("Google,neutral,2019," + i + "," + 1 + "," + rand.nextInt(100));
+                writer.println("Google,neutral," + min + "," + rand.nextInt(100));
                 min = min.plusMinutes(1);
             } catch (IOException e) {
                 e.printStackTrace();
