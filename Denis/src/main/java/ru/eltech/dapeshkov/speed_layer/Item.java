@@ -1,15 +1,17 @@
 package ru.eltech.dapeshkov.speed_layer;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public class Item implements Serializable {
+    public static final long serialVersionUID = 0L;
     private String sentiment;
     private String company_name;
     private double stock;
-    private LocalDateTime dateTime;
+    private Timestamp dateTime;
 
-    public Item(String company_name, String sentiment, LocalDateTime dateTime, double stock) {
+    public Item(String company_name, String sentiment, Timestamp dateTime, double stock) {
         this.sentiment = sentiment;
         this.company_name = company_name;
         this.stock = stock;
@@ -45,11 +47,11 @@ public class Item implements Serializable {
         this.stock = stock;
     }
 
-    public LocalDateTime getDateTime() {
+    public Timestamp getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setDateTime(Timestamp dateTime) {
         this.dateTime = dateTime;
     }
 }

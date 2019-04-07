@@ -20,6 +20,7 @@ import ru.eltech.dapeshkov.speed_layer.Item;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class Streaming {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
-        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.milliseconds(10));
+        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
         jssc.sparkContext().setLogLevel("ERROR");
 
         JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
@@ -49,7 +50,7 @@ public class Streaming {
 
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
-            return new Item(split[0], split[1], LocalDateTime.parse(split[2]), Double.valueOf(split[3]));
+            return new Item(split[0], split[1], Timestamp.valueOf(split[2]), Double.valueOf(split[3]));
         });
 
         schemaJavaDStream.foreachRDD(rdd -> { //driver
@@ -60,7 +61,7 @@ public class Streaming {
                     arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
                         Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
-                        PipelineModel model = ModelSingleton.getModel("models/");
+                        PipelineModel model = ModelSingleton.getModel("models/model");
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }

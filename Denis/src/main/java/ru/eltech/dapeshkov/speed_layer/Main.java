@@ -1,10 +1,10 @@
 package ru.eltech.dapeshkov.speed_layer;
 
-        import java.io.*;
-        import java.sql.Time;
-        import java.time.LocalDateTime;
-        import java.util.Random;
-        import java.sql.Timestamp;
+import java.io.*;
+import java.sql.Time;
+import java.time.LocalDateTime;
+import java.util.Random;
+import java.sql.Timestamp;
 
 /**
  * This is a test class
@@ -27,7 +27,7 @@ public class Main {
             try (final PrintWriter writer = new PrintWriter(
                     new BufferedWriter(
                             new OutputStreamWriter(new FileOutputStream("files/" + i++ + ".txt"))), true)) {
-                writer.println("Google,neutral," + min + "," + rand.nextInt(100));
+                writer.println("Google,neutral," + Timestamp.valueOf(min) + "," + rand.nextInt(100));
                 min = min.plusMinutes(1);
             } catch (IOException e) {
                 e.printStackTrace();
