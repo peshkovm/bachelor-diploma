@@ -40,7 +40,7 @@ public class Streaming {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
-        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
+        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.milliseconds(10));
         jssc.sparkContext().setLogLevel("ERROR");
 
         JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
@@ -55,28 +55,18 @@ public class Streaming {
         schemaJavaDStream.foreachRDD(rdd -> { //driver
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
-            rdd.sortBy(Item::getDateTime,false,1).collect().forEach(str -> { //driver
-                System.out.println(str);
-                //ArrayBlockingQueue<Schema> arrayBlockingQueue = ArrayBlockingQueueSinglton.getHelper();
-                /*String[] split = str.split(",");
-                Schema record = new Schema();
-                record.setCompany(split[0]);
-                record.setSentiment(split[1]);
-                record.setYear(Integer.valueOf(split[2]));
-                record.setMonth(Integer.valueOf(split[3]));
-                record.setDay(Integer.valueOf(split[4]));
-                record.setToday_stock(Double.valueOf(split[5]));
-
+            rdd.sortBy(Item::getDateTime, true, 1).collect().forEach(item -> { //driver
                 try {
-                    arrayBlockingQueue.put(record);
+                    arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
-                        Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Schema>(arrayBlockingQueue), Schema.class);
+                        Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
+                        PipelineModel model = ModelSingleton.getModel("models/");
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
-                }*/
+                }
             });
         });
 

@@ -1,10 +1,10 @@
 package ru.eltech.dapeshkov.speed_layer;
 
-import java.io.*;
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.util.Random;
-import java.sql.Timestamp;
+        import java.io.*;
+        import java.sql.Time;
+        import java.time.LocalDateTime;
+        import java.util.Random;
+        import java.sql.Timestamp;
 
 /**
  * This is a test class
@@ -16,7 +16,7 @@ public class Main {
         //reader.start();
         int i = 0;
         Random rand = new Random();
-        LocalDateTime min = LocalDateTime.of(1970, 1, 1, 3, 0, 0, 0);
+        LocalDateTime min = LocalDateTime.now();
         while (true) {
             BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
             try {
