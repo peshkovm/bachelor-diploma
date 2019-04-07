@@ -19,6 +19,7 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,7 +30,7 @@ import static org.apache.spark.sql.functions.count;
 public class Streaming {
 
     public static void main(String[] args) {
-        startStructured();
+        startRDD();
     }
 
     public static void startRDD() {
@@ -38,17 +39,31 @@ public class Streaming {
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
+        jssc.sparkContext().setLogLevel("ERROR");
 
         JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
 
-        JavaDStream<String> window = stringJavaDStream.window(Durations.milliseconds(1000));
+        ArrayBlockingQueue<Schema> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
-        stringJavaDStream.foreachRDD(rdd -> { //driver
+        JavaDStream<Schema> schemaJavaDStream = stringJavaDStream.map(str -> {
+            String[] split = str.split(",");
+            Schema record = new Schema();
+            record.setCompany(split[0]);
+            record.setSentiment(split[1]);
+            record.setYear(Integer.valueOf(split[2]));
+            record.setMonth(Integer.valueOf(split[3]));
+            record.setDay(Integer.valueOf(split[4]));
+            record.setToday_stock(Double.valueOf(split[5]));
+            return record;
+        });
+
+        schemaJavaDStream.foreachRDD(rdd -> { //driver
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
-            rdd.foreach(str -> {
-                Map<String, ArrayBlockingQueue<Schema>> map = HashMapSinglton.getHelper();
-                String[] split = str.split(",");
+            rdd.sortBy().collect().forEach(str -> { //driver
+                System.out.println(str);
+                //ArrayBlockingQueue<Schema> arrayBlockingQueue = ArrayBlockingQueueSinglton.getHelper();
+                /*String[] split = str.split(",");
                 Schema record = new Schema();
                 record.setCompany(split[0]);
                 record.setSentiment(split[1]);
@@ -57,21 +72,17 @@ public class Streaming {
                 record.setDay(Integer.valueOf(split[4]));
                 record.setToday_stock(Double.valueOf(split[5]));
 
-                map.compute(record.getCompany(), (k, v) -> {
-                    ArrayBlockingQueue<Schema> temp = null;
-                    try {
-                        temp = (v == null ? new ArrayBlockingQueue<Schema>(5) : v);
-                        temp.put(record);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                try {
+                    arrayBlockingQueue.put(record);
+                    if (arrayBlockingQueue.size() == 5) {
+                        Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Schema>(arrayBlockingQueue), Schema.class);
+                        dataFrame.show();
+                        arrayBlockingQueue.take();
                     }
-                    return temp;
-                });
-
-                map.entrySet().stream().filter((e) -> e.getValue().size() == 5).forEach(Streaming::getModel);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }*/
             });
-
-            //Dataset<Row> dataFrame = spark.createDataFrame(rowRDD, Schema.class);
         });
 
         jssc.start();
@@ -120,7 +131,11 @@ public class Streaming {
 
         StreamingQuery query = windowedDataset
                 .writeStream()
-                .outputMode("append")
+                .foreachBatch((VoidFunction2<Dataset<Row>, Long>) (v1, v2) -> {
+                    if (v1.count() == 5) {
+                        PipelineModel model = ModelSingleton.getModel("models/");
+                    }
+                })
                 .format("console")
                 .start();
 
@@ -128,25 +143,6 @@ public class Streaming {
             query.awaitTermination();
         } catch (StreamingQueryException e) {
             e.printStackTrace();
-        }
-    }
-
-    static void getModel(Map.Entry<String, ArrayBlockingQueue<Schema>> entry) {
-        Watcher watcher = null;
-        try {
-            watcher = WatcherFactory.get(Paths.get(entry.getKey()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        PipelineModel model = null;
-        if (watcher.check()) {
-            model = PipelineModel.load("model/model");
-        }
-
-        try {
-            entry.getValue().take();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 }

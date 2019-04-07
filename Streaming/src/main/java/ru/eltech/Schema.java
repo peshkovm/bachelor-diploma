@@ -3,9 +3,7 @@ package ru.eltech;
 public class Schema implements java.io.Serializable {
     private String company;
     private String sentiment;
-    private int year;
-    private int month;
-    private int day;
+    private
     private double today_stock;
 
     public String getCompany() {
