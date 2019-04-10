@@ -31,7 +31,7 @@ public class PredictionUtils {
     private PredictionUtils() {
     }
 
-    public static Model<?> trainSlidingWindowModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) {
+    public static Model<?> trainSlidingWindowModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
         //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
 /*        SparkSession spark = SparkSession
@@ -45,7 +45,6 @@ public class PredictionUtils {
 
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);*/
-
         Dataset<Row> inDataCopy = trainingDatasetWindowed.toDF();
 
         logWriter.println("Initial:");
@@ -180,11 +179,11 @@ public class PredictionUtils {
                 .setEvaluator(evaluator)
                 .setNumFolds(2);
 
-        CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
-
         //PipelineModel pipelineModel = pipeline.fit(trainingDatasetWindowed);
+        CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
+        Model<?> bestModel = crossValidatorModel.bestModel();
 
-        return crossValidatorModel.bestModel();
+        return bestModel;
     }
 
     public static Model<?> trainModel(Dataset<Row> trainingDataset, MyFileWriter logWriter) {
