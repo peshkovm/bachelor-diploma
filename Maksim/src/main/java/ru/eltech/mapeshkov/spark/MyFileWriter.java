@@ -2,24 +2,29 @@ package ru.eltech.mapeshkov.spark;
 
 import org.apache.spark.sql.Dataset;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class MyFileWriter {
     private PrintWriter writer;
     private static String projectDir = System.getProperty("user.dir");
 
     public MyFileWriter() {
-        this(projectDir + "\\Maksim\\src\\test\\resources\\spark Ml out.txt");
+        this(Paths.get(projectDir + "\\Maksim\\src\\test\\resources\\spark Ml out.txt"));
     }
 
-    public MyFileWriter(String fileName) {
+    public MyFileWriter(Path path) {
         try {
+            File parentFile = path.toFile().getParentFile();
+            if (!parentFile.exists() && !parentFile.mkdirs())
+                throw new IllegalStateException("Couldn't create dir: " + parentFile);
             writer = new PrintWriter(
                     new BufferedWriter(
-                            new FileWriter(fileName)
+                            new OutputStreamWriter(
+                                    new FileOutputStream(path.toFile()), StandardCharsets.UTF_8)
                     ), true);
             writer.print("");
             writer.flush();
