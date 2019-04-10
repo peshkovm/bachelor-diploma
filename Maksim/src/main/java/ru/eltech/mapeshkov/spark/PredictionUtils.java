@@ -82,6 +82,12 @@ public class PredictionUtils {
         String[] featuresInputCols = new String[2 * windowWidth];
         featuresInputCols = featuresInputColsList.toArray(featuresInputCols);
 
+        ArrayList<StringIndexerModel> sentimentIndexersModels = new ArrayList<>();
+        for (StringIndexer sentimentIndexer :
+                sentimentIndexers) {
+            sentimentIndexersModels.add(sentimentIndexer.fit(trainingDatasetWindowed));
+        }
+
         for (StringIndexer sentimentIndexer :
                 sentimentIndexers) {
             inDataCopy = sentimentIndexer.fit(inDataCopy).transform(inDataCopy);
@@ -143,7 +149,7 @@ public class PredictionUtils {
                 .setFeaturesCol("features")
                 .setPredictionCol("prediction");
 
-        ArrayList<PipelineStage> pipelineStagesList = new ArrayList<>(sentimentIndexers);
+        ArrayList<PipelineStage> pipelineStagesList = new ArrayList<>(sentimentIndexersModels);
         PipelineStage[] pipelineStages = new PipelineStage[windowWidth + 2];
 
         pipelineStagesList.add(assembler);
