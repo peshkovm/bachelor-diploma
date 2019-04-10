@@ -8,11 +8,17 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.apache.spark.sql.functions.asc;
+import static org.apache.spark.sql.functions.desc;
 
 public class InDataRefactorUtils {
 
@@ -21,31 +27,21 @@ public class InDataRefactorUtils {
     }
 
     public static Dataset<Row> sortByDate(final SparkSession spark, final Dataset<Row> dataset, final StructType schema) {
-        List<Row> rows = dataset.collectAsList();
+/*        List<Row> rows = dataset.collectAsList();
         String[] columns = dataset.columns();
 
         rows = rows.stream().sorted((row1, row2) -> {
-            int yearIndex = Arrays.asList(columns).indexOf("year");
-            int monthIndex = Arrays.asList(columns).indexOf("month");
-            int dayIndex = Arrays.asList(columns).indexOf("day");
+            int dateIndex = Arrays.asList(columns).indexOf("date");
 
-            String[] split1 = row1.mkString(",").split(",");
-            String[] split2 = row2.mkString(",").split(",");
+            Timestamp timestamp1 = row1.getTimestamp(dateIndex);
+            Timestamp timestamp2 = row2.getTimestamp(dateIndex);
 
-            int year1 = Integer.parseInt(split1[yearIndex]);
-            int year2 = Integer.parseInt(split2[yearIndex]);
-            int month1 = Integer.parseInt(split1[monthIndex]);
-            int month2 = Integer.parseInt(split2[monthIndex]);
-            int day1 = Integer.parseInt(split1[dayIndex]);
-            int day2 = Integer.parseInt(split2[dayIndex]);
-
-            int date1 = year1 * 10_000 + month1 * 100 + day1;
-            int date2 = year2 * 10_000 + month2 * 100 + day2;
-
-            return date1 - date2;
+            return timestamp1.compareTo(timestamp2);
         }).collect(Collectors.toList());
 
-        return spark.createDataFrame(rows, schema);
+        return spark.createDataFrame(rows, schema);*/
+
+        return dataset.orderBy(asc("date"));
     }
 
     public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled) {
@@ -65,19 +61,15 @@ public class InDataRefactorUtils {
             String[] rowStr = rowToday.mkString(",").split(",");
             rowStr[labelIndex] = tomorrowStock;
 
-            String company = rowStr[0];
-            String sentiment = rowStr[1];
-            int year = Integer.parseInt(rowStr[2]);
-            int month = Integer.parseInt(rowStr[3]);
-            int day = Integer.parseInt(rowStr[4]);
-            double today_stock = Double.parseDouble(rowStr[5]);
-            double label = Double.parseDouble(rowStr[6]);
+            String company = rowStr[Arrays.asList(columns).indexOf("company")];
+            String sentiment = rowStr[Arrays.asList(columns).indexOf("sentiment")];
+            String date = rowStr[Arrays.asList(columns).indexOf("date")];
+            double today_stock = Double.parseDouble(rowStr[Arrays.asList(columns).indexOf("today_stock")]);
+            double label = Double.parseDouble(rowStr[Arrays.asList(columns).indexOf("label")]);
 
             Row rowTodayLabeled = RowFactory.create(company,
                     sentiment,
-                    year,
-                    month,
-                    day,
+                    date,
                     today_stock,
                     label);
 
@@ -89,9 +81,7 @@ public class InDataRefactorUtils {
         StructType schemaLabeled = new StructType(new StructField[]{
                 new StructField("company", DataTypes.StringType, false, Metadata.empty()),
                 new StructField("sentiment", DataTypes.StringType, false, Metadata.empty()),
-                new StructField("year", DataTypes.IntegerType, false, Metadata.empty()),
-                new StructField("month", DataTypes.IntegerType, false, Metadata.empty()),
-                new StructField("day", DataTypes.IntegerType, false, Metadata.empty()),
+                new StructField("date", DataTypes.StringType, false, Metadata.empty()),
                 new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
                 new StructField("label", DataTypes.DoubleType, true, Metadata.empty()),
         });
@@ -169,9 +159,7 @@ public class InDataRefactorUtils {
 
             String company = split[Arrays.asList(columns).indexOf("company")];
             String sentiment = split[Arrays.asList(columns).indexOf("sentiment")];
-            String year = split[Arrays.asList(columns).indexOf("year")];
-            String month = split[Arrays.asList(columns).indexOf("month")];
-            String day = split[Arrays.asList(columns).indexOf("day")];
+            String date = split[Arrays.asList(columns).indexOf("date")];
             double today_stock = Double.parseDouble(split[Arrays.asList(columns).indexOf("today_stock")]);
             double tomorrow_stock = Double.parseDouble(split[Arrays.asList(columns).indexOf("label")]);
 
