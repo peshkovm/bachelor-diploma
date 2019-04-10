@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 
 public class Processing {
 
-    private static final Map<Pair, Double> likelihood = new ConcurrentHashMap<>();
-    private static final Map<String, Double> prior_probability = new ConcurrentHashMap<>();
+    private static final Map<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
+    private static final Map<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
     private static final Set<String> hash = new HashSet<>();
     private static int count = 0;
     private static int n;

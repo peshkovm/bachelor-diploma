@@ -1,11 +1,7 @@
 package ru.eltech;
 
-import org.apache.spark.ml.regression.LinearRegression;
-
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class Watcher {
 
