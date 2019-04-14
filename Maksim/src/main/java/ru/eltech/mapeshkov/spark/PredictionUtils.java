@@ -318,23 +318,10 @@ public class PredictionUtils {
         return crossValidatorModel.bestModel();
     }
 
-    public static void predict(Model<?> trainedModel, Dataset<Row> inDataset, MyFileWriter logWriter) {
-        Dataset<Row> trainingDataset;
-        Dataset<Row> testDataset;
-
-        do {
-            Dataset<Row>[] datasets = inDataset.randomSplit(new double[]{0.8, 0.2});
-            trainingDataset = datasets[0];
-            testDataset = datasets[1];
-        } while (testDataset.count() == 0);
-
-        predict(trainedModel, trainingDataset, testDataset, logWriter);
-    }
-
-    public static void predict(Model<?> trainedModel, Dataset<Row> trainingDataset, Dataset<Row> testDataset, MyFileWriter logWriter) {
+    public static void predict(Model<?> trainedModel, Dataset<Row> testDataset, MyFileWriter logWriter) {
         logWriter.println("Test data:");
-        logWriter.printSchema(trainingDataset);
-        logWriter.show(trainingDataset);
+        logWriter.printSchema(testDataset);
+        logWriter.show(testDataset);
 
         logWriter.println("Test data count = " + testDataset.count());
         logWriter.println();
