@@ -97,7 +97,10 @@ public class Batch {
 
         Dataset<Row> trainingDatasetNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, trainingDatasetNotLabeled, schemaNotLabeled);
 
-        Dataset<Row> trainingDatasetLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, trainingDatasetNotLabeledSorted);
+        logWriter.printSchema(trainingDatasetNotLabeledSorted);
+        logWriter.show(trainingDatasetNotLabeledSorted);
+
+        Dataset<Row> trainingDatasetLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, trainingDatasetNotLabeledSorted, true);
 
         logWriter.printSchema(trainingDatasetLabeled);
         logWriter.show(trainingDatasetLabeled);
@@ -114,6 +117,25 @@ public class Batch {
 /*        if (trainedModel instanceof PipelineModel) {
             ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
         }*/
+
+        //////////////////////////////////
+        Dataset<Row> testingDatasetNotLabeled = spark.read()
+                .schema(schemaNotLabeled)
+                //.option("inferSchema", true)
+                //.option("header", true)л
+                .option("delimiter", ",")
+                .option("charset", "UTF-8")
+                //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
+                .csv("D:\\testData")
+                .toDF("company", "sentiment", "date", "today_stock")
+                .cache();
+        //////////////////////////////////
+
+        Dataset<Row> testingDataNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, testingDatasetNotLabeled, schemaNotLabeled);
+        Dataset<Row> testingDataLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, testingDataNotLabeledSorted, false);
+        Dataset<Row> testingDataWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, testingDataLabeled, 5);
+
+        PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
 
         //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
     }
