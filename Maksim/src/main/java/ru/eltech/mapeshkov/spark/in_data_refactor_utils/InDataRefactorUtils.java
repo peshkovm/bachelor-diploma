@@ -44,9 +44,10 @@ public class InDataRefactorUtils {
         return dataset.orderBy(asc("date"));
     }
 
-    public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled) {
+    public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled, boolean addNaNLabel) {
         Dataset<Row> datasetNotLabeledCopy = datasetNotLabeled.toDF();
-        datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("label", functions.lit(-1.0));
+        datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("date", new Column("date").cast(DataTypes.StringType));
+        datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("label", functions.lit(Double.NaN));
         String[] columns = datasetNotLabeledCopy.columns();
         int today_stockIndex = Arrays.asList(columns).indexOf("today_stock");
         int labelIndex = Arrays.asList(columns).indexOf("label");
@@ -76,7 +77,12 @@ public class InDataRefactorUtils {
             rows.set(rowNum - 1, rowTodayLabeled);
         }
 
-        List<Row> rowsLabeled = rows.subList(0, rows.size() - 1);
+        List<Row> rowsLabeled;
+
+        if (addNaNLabel)
+            rowsLabeled = rows.subList(0, rows.size() - 1);
+        else
+            rowsLabeled = rows.subList(0, rows.size());
 
         StructType schemaLabeled = new StructType(new StructField[]{
                 new StructField("company", DataTypes.StringType, false, Metadata.empty()),
