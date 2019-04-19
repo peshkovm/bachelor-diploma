@@ -52,19 +52,28 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = "files/";
+        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
 
         //for (; ; ) {
-        List<Path> companyDirPathList = Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).collect(Collectors.toList());
+        Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
+            long filesOldCount = 0, filesCount = 0;
+            try {
+                System.out.println(companyDirPath);
 
-        for (Path companyDirPath : companyDirPathList) {
-            System.out.println(companyDirPath);
-            batchCalculate(spark, companyDirPath);
-        }
+                for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                     filesCount - filesOldCount < 50;
+                     filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
+                    TimeUnit.MINUTES.sleep(50 - filesCount - filesOldCount);
+                }
+                batchCalculate(spark, companyDirPath);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
         //}
     }
 
-    public static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
+    private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
         StructType schemaNotLabeled = new StructType(new StructField[]{
                 new StructField("company", DataTypes.StringType, false, Metadata.empty()),
                 new StructField("sentiment", DataTypes.StringType, false, Metadata.empty()),
@@ -72,14 +81,7 @@ public class Batch {
                 new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
                 //new StructField("tomorrow_stock", DataTypes.DoubleType, false, Metadata.empty()),
         });
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("trained_out/" + companyDirPath.getFileName() + "/out.txt"));
-        long filesOldCount = 0, filesCount = 0;
-
-/*        for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
-             filesCount - filesOldCount < 50;
-             filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-            TimeUnit.MINUTES.sleep(filesCount - filesOldCount);
-        }*/
+        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\logFiles\\" + companyDirPath.getFileName() + "\\spark Ml out.txt"));
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
@@ -114,8 +116,29 @@ public class Batch {
 
         Model<?> trainedModel = PredictionUtils.trainSlidingWindowModel(trainingDatasetWindowed, 5, logWriter);
 
-        if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save("trained_out/" + companyDirPath.getFileName() + "/outModel");
-        }
+/*        if (trainedModel instanceof PipelineModel) {
+            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
+        }*/
+
+        //////////////////////////////////
+        Dataset<Row> testingDatasetNotLabeled = spark.read()
+                .schema(schemaNotLabeled)
+                //.option("inferSchema", true)
+                //.option("header", true)л
+                .option("delimiter", ",")
+                .option("charset", "UTF-8")
+                //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
+                .csv("D:\\testData")
+                .toDF("company", "sentiment", "date", "today_stock")
+                .cache();
+        //////////////////////////////////
+
+        Dataset<Row> testingDataNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, testingDatasetNotLabeled, schemaNotLabeled);
+        Dataset<Row> testingDataLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, testingDataNotLabeledSorted, false);
+        Dataset<Row> testingDataWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, testingDataLabeled, 5);
+
+        PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
+
+        //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
     }
 }
