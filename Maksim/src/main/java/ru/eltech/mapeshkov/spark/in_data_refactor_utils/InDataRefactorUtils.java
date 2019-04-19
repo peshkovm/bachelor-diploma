@@ -77,6 +77,24 @@ public class InDataRefactorUtils {
             rows.set(rowNum - 1, rowTodayLabeled);
         }
 
+        //////////Last row//////////////
+        String[] rowStr = rows.get(rows.size() - 1).mkString(",").split(",");
+
+        String company = rowStr[Arrays.asList(columns).indexOf("company")];
+        String sentiment = rowStr[Arrays.asList(columns).indexOf("sentiment")];
+        String date = rowStr[Arrays.asList(columns).indexOf("date")];
+        double today_stock = Double.parseDouble(rowStr[Arrays.asList(columns).indexOf("today_stock")]);
+        double label = Double.parseDouble(rowStr[Arrays.asList(columns).indexOf("label")]);
+
+        Row rowTodayLabeled = RowFactory.create(company,
+                sentiment,
+                date,
+                today_stock,
+                label);
+
+        rows.set(rows.size() - 1, rowTodayLabeled);
+        /////////////////////////////////
+
         List<Row> rowsLabeled;
 
         if (addNaNLabel)

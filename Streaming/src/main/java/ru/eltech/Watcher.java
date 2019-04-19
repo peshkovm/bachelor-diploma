@@ -10,7 +10,7 @@ public class Watcher {
 
     public Watcher(Path path) throws IOException {
         watchService = FileSystems.getDefault().newWatchService();
-        path.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+        WatchKey key = path.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         file = path.getName(path.getNameCount() - 1).toString();
     }
 
@@ -42,16 +42,18 @@ public class Watcher {
 
         wk = watchService.poll();
 
-        for (WatchEvent<?> event : wk.pollEvents()) {
-            final Path changed = (Path) event.context();
-            if (changed.endsWith(file)) {
-                return true;
+        if (wk != null) {
+            for (WatchEvent<?> event : wk.pollEvents()) {
+                final Path changed = (Path) event.context();
+                if (changed.endsWith(file)) {
+                    return true;
+                }
             }
-        }
-        // reset the key
-        boolean valid = wk.reset();
-        if (!valid) {
-            System.err.println("Key has been unregistered");
+            // reset the key
+            boolean valid = wk.reset();
+            if (!valid) {
+                System.err.println("Key has been unregistered");
+            }
         }
         return false;
     }
