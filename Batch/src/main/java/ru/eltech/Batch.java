@@ -52,7 +52,7 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
+        String companiesDirPath = "files/";
 
         //for (; ; ) {
         List<Path> companyDirPathList = Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).collect(Collectors.toList());
@@ -64,7 +64,7 @@ public class Batch {
         //}
     }
 
-    private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
+    public static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
         StructType schemaNotLabeled = new StructType(new StructField[]{
                 new StructField("company", DataTypes.StringType, false, Metadata.empty()),
                 new StructField("sentiment", DataTypes.StringType, false, Metadata.empty()),
@@ -72,7 +72,7 @@ public class Batch {
                 new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
                 //new StructField("tomorrow_stock", DataTypes.DoubleType, false, Metadata.empty()),
         });
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\outFiles\\" + companyDirPath.getFileName() + "\\spark Ml out.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get("trained_out/" + companyDirPath.getFileName() + "/out.txt"));
         long filesOldCount = 0, filesCount = 0;
 
 /*        for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
@@ -88,7 +88,7 @@ public class Batch {
                 .option("delimiter", ",")
                 .option("charset", "UTF-8")
                 //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
-                .csv("D:\\refactored\\" + companyDirPath.getFileName())
+                .csv(companyDirPath.toString())
                 .toDF("company", "sentiment", "date", "today_stock")
                 .cache();
 
@@ -114,29 +114,8 @@ public class Batch {
 
         Model<?> trainedModel = PredictionUtils.trainSlidingWindowModel(trainingDatasetWindowed, 5, logWriter);
 
-/*        if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
-        }*/
-
-        //////////////////////////////////
-        Dataset<Row> testingDatasetNotLabeled = spark.read()
-                .schema(schemaNotLabeled)
-                //.option("inferSchema", true)
-                //.option("header", true)л
-                .option("delimiter", ",")
-                .option("charset", "UTF-8")
-                //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
-                .csv("D:\\testData")
-                .toDF("company", "sentiment", "date", "today_stock")
-                .cache();
-        //////////////////////////////////
-
-        Dataset<Row> testingDataNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, testingDatasetNotLabeled, schemaNotLabeled);
-        Dataset<Row> testingDataLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, testingDataNotLabeledSorted, false);
-        Dataset<Row> testingDataWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, testingDataLabeled, 5);
-
-        PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
-
-        //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
+        if (trainedModel instanceof PipelineModel) {
+            ((PipelineModel) trainedModel).write().overwrite().save("trained_out/" + companyDirPath.getFileName() + "/outModel");
+        }
     }
 }

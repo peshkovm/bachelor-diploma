@@ -18,6 +18,7 @@ import ru.eltech.mapeshkov.spark.MyFileWriter;
 import ru.eltech.mapeshkov.spark.PredictionUtils;
 import ru.eltech.mapeshkov.spark.in_data_refactor_utils.InDataRefactorUtils;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -28,11 +29,11 @@ import static org.apache.spark.sql.functions.count;
 
 public class Streaming {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         startRDD();
     }
 
-    public static void startRDD() {
+    public static void startRDD() throws IOException {
 
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
@@ -45,6 +46,8 @@ public class Streaming {
         ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
         MyFileWriter writer = new MyFileWriter(Paths.get("logs/log1.txt"));
+
+        Model model = new Model("trained_out/Google/outModel");
 
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
@@ -59,13 +62,13 @@ public class Streaming {
                     arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
                         Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
-                        PipelineModel model = ModelSingleton.getModel("models/Googlemodel");
+                        PipelineModel pipelineModel = model.getModel();
                         writer.show(dataFrame);
                         Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
                         writer.show(labeledDataFrame);
                         Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
                         writer.show(windowedDataFrame);
-                        PredictionUtils.predict(model, windowedDataFrame, writer);
+                        PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }
@@ -123,7 +126,7 @@ public class Streaming {
                 .writeStream()
                 .foreachBatch((VoidFunction2<Dataset<Row>, Long>) (v1, v2) -> {
                     if (v1.count() == 5) {
-                        PipelineModel model = ModelSingleton.getModel("models/");
+                        //PipelineModel model = ModelSingleton.getModel("models/");
                     }
                 })
                 .format("console")
