@@ -2,25 +2,24 @@ package ru.eltech.dapeshkov.speed_layer;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 public class Item implements Serializable {
     public static final long serialVersionUID = 0L;
     private String sentiment;
-    private String company_name;
-    private double stock;
-    private Timestamp dateTime;
+    private String company;
+    private double today_stock;
+    private Timestamp date;
 
     public Item(String company_name, String sentiment, Timestamp dateTime, double stock) {
         this.sentiment = sentiment;
-        this.company_name = company_name;
-        this.stock = stock;
-        this.dateTime = dateTime;
+        this.company = company_name;
+        this.today_stock = stock;
+        this.date = dateTime;
     }
 
     @Override
     public String toString() {
-        return getCompany_name() + "," + getSentiment() + "," + getDateTime() + "," + getStock();
+        return getCompany() + "," + getSentiment() + "," + getDate() + "," + getToday_stock();
     }
 
     public String getSentiment() {
@@ -31,27 +30,27 @@ public class Item implements Serializable {
         this.sentiment = sentiment;
     }
 
-    public String getCompany_name() {
-        return company_name;
+    public String getCompany() {
+        return company;
     }
 
-    public void setCompany_name(String company_name) {
-        this.company_name = company_name;
+    public void setCompany(String company) {
+        this.company = company;
     }
 
-    public double getStock() {
-        return stock;
+    public double getToday_stock() {
+        return today_stock;
     }
 
-    public void setStock(double stock) {
-        this.stock = stock;
+    public void setToday_stock(double today_stock) {
+        this.today_stock = today_stock;
     }
 
-    public Timestamp getDateTime() {
-        return dateTime;
+    public Timestamp getDate() {
+        return date;
     }
 
-    public void setDateTime(Timestamp dateTime) {
-        this.dateTime = dateTime;
+    public void setDate(Timestamp date) {
+        this.date = date;
     }
 }

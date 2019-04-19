@@ -4,10 +4,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.streaming.OutputMode;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
-import org.apache.spark.sql.streaming.Trigger;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
@@ -16,15 +14,13 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import ru.eltech.dapeshkov.speed_layer.Item;
+import ru.eltech.mapeshkov.spark.MyFileWriter;
+import ru.eltech.mapeshkov.spark.PredictionUtils;
+import ru.eltech.mapeshkov.spark.in_data_refactor_utils.InDataRefactorUtils;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.apache.spark.sql.functions.col;
@@ -48,6 +44,8 @@ public class Streaming {
 
         ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
+        MyFileWriter writer = new MyFileWriter(Paths.get("logs/log1.txt"));
+
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
             return new Item(split[0], split[1], Timestamp.valueOf(split[2]), Double.valueOf(split[3]));
@@ -56,12 +54,18 @@ public class Streaming {
         schemaJavaDStream.foreachRDD(rdd -> { //driver
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
-            rdd.sortBy(Item::getDateTime, true, 1).collect().forEach(item -> { //driver
+            rdd.sortBy(Item::getDate, true, 1).collect().forEach(item -> { //driver
                 try {
                     arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
                         Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
-                        PipelineModel model = ModelSingleton.getModel("models/model");
+                        PipelineModel model = ModelSingleton.getModel("models/Googlemodel");
+                        writer.show(dataFrame);
+                        Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
+                        writer.show(labeledDataFrame);
+                        Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
+                        writer.show(windowedDataFrame);
+                        PredictionUtils.predict(model, windowedDataFrame, writer);
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }
