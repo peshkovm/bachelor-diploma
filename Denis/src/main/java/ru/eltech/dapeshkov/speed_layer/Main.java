@@ -53,6 +53,7 @@ public class Main {
             Processing.train(2);
             for (JSONProcessor.Item i : news.getItems()) {
                 final Item item = new Item("Google", Processing.sentiment(i.toString()), Timestamp.valueOf(i.getPublish_date()), ApiUtils.AlphaVantageParser.getLatestStock("Google").getChange());
+                System.out.println(i.getAnons());
                 write(item.toString(), new FileOutputStream("files/Google/" + a++ + ".txt"));
             }
         } catch (FileNotFoundException e) {
