@@ -11,7 +11,7 @@ import java.net.URL;
  * The {@link Connection#close() } should be called after reading all necessary information from Connection to close the connection and {@link InputStream}.
  */
 
-class Connection implements AutoCloseable {
+public class Connection implements AutoCloseable {
     private final URL url;
     private long lastModified = -1; //HTTP Last-Modified
     private InputStream in = null; //Stream for reading from Connection
@@ -23,7 +23,7 @@ class Connection implements AutoCloseable {
      * @param url URL of the Connection
      */
 
-    Connection(final String url) {
+    public Connection(final String url) {
         URL url1 = null;
         try {
             url1 = new URL(url);
@@ -39,7 +39,7 @@ class Connection implements AutoCloseable {
      * @return the data of the site.
      */
 
-    InputStream get() {
+    public InputStream get() {
         in = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
