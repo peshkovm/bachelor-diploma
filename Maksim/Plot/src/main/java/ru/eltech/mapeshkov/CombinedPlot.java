@@ -1,34 +1,37 @@
-package ru.eltech.mapeshkov.spark;
+package ru.eltech.mapeshkov;
 
-        import org.apache.spark.sql.Dataset;
-        import org.apache.spark.sql.Row;
-        import org.jfree.chart.ChartPanel;
-        import org.jfree.chart.JFreeChart;
-        import org.jfree.chart.labels.StandardXYItemLabelGenerator;
-        import org.jfree.chart.plot.CombinedDomainXYPlot;
-        import org.jfree.chart.plot.PlotOrientation;
-        import org.jfree.chart.plot.XYPlot;
-        import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
-        import org.jfree.chart.ui.ApplicationFrame;
-        import org.jfree.data.general.AbstractDataset;
-        import org.jfree.data.xy.XYDataset;
-        import org.jfree.data.xy.XYSeries;
-        import org.jfree.data.xy.XYSeriesCollection;
+/*
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.labels.StandardXYItemLabelGenerator;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.chart.ui.ApplicationFrame;
+import org.jfree.data.general.AbstractDataset;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
-        import java.awt.*;
-        import java.util.Arrays;
-        import java.util.List;
+import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class CombinedPlot extends ApplicationFrame {
     private final XYSeries labelSeries = new XYSeries("label");
     private final XYSeries oldPrediction = new XYSeries("old prediction");
     private final XYSeries newPrediction = new XYSeries("new prediction");
 
-    /**
+    */
+/**
      * Constructs a new application frame.
      *
      * @param title the frame title.
-     */
+     *//*
+
     public CombinedPlot(String title, Dataset<Row> rowDataset) {
         this(title, rowDataset, 500, 300);
     }
@@ -100,4 +103,4 @@ public class CombinedPlot extends ApplicationFrame {
     private static class LabeledXYDataset extends AbstractDataset {
 
     }
-}
+}*/

@@ -55,12 +55,21 @@ public class Batch {
         String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
 
         //for (; ; ) {
-        List<Path> companyDirPathList = Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).collect(Collectors.toList());
+        Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
+            long filesOldCount = 0, filesCount = 0;
+            try {
+                System.out.println(companyDirPath);
 
-        for (Path companyDirPath : companyDirPathList) {
-            System.out.println(companyDirPath);
-            batchCalculate(spark, companyDirPath);
-        }
+                for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                     filesCount - filesOldCount < 50;
+                     filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
+                    TimeUnit.MINUTES.sleep(50 - filesCount - filesOldCount);
+                }
+                batchCalculate(spark, companyDirPath);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
         //}
     }
 
@@ -72,14 +81,7 @@ public class Batch {
                 new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
                 //new StructField("tomorrow_stock", DataTypes.DoubleType, false, Metadata.empty()),
         });
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\outFiles\\" + companyDirPath.getFileName() + "\\spark Ml out.txt"));
-        long filesOldCount = 0, filesCount = 0;
-
-/*        for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
-             filesCount - filesOldCount < 50;
-             filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-            TimeUnit.MINUTES.sleep(filesCount - filesOldCount);
-        }*/
+        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\logFiles\\" + companyDirPath.getFileName() + "\\spark Ml out.txt"));
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
@@ -88,7 +90,7 @@ public class Batch {
                 .option("delimiter", ",")
                 .option("charset", "UTF-8")
                 //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
-                .csv("D:\\refactored\\" + companyDirPath.getFileName())
+                .csv(companyDirPath.toString())
                 .toDF("company", "sentiment", "date", "today_stock")
                 .cache();
 
