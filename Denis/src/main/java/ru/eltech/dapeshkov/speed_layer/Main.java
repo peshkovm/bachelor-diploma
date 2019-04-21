@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     public static void main(final String[] args) {
-        final NewsReader reader = new NewsReader("files/", "Google", "Google");
+        final NewsReader reader = new NewsReader("files/", "Google");
         reader.start();
     }
 }

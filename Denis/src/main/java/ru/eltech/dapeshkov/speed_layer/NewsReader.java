@@ -54,7 +54,7 @@ public class NewsReader {
 
     public void start() {
         for (final String a : url) {
-            final Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
+            final Connection connection = new Connection("http://192.168.0.111:8080/Test_war_exploded/?tag=" + a);
             ex.scheduleAtFixedRate(new Runnable() {
                 private LocalDateTime lastpubdate = null;
                 private Integer i = 0;
