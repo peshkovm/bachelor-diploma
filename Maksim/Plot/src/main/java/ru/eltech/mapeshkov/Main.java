@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        PlotHelper plotHelper = new PlotHelper("");
+        PlotHelper plotHelper = new PlotHelper("predicition/pred.txt");
 
         for (; ; ) {
             TimeUnit.SECONDS.sleep(1);
