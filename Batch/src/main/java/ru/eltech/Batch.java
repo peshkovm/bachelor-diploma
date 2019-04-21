@@ -25,8 +25,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -54,17 +53,24 @@ public class Batch {
 
         String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
 
+        HashMap<String, Long> countOfFilesMap = new HashMap<>();
+
         //for (; ; ) {
         Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
-            long filesOldCount = 0, filesCount = 0;
             try {
+                countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
+                long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
+                long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+
                 System.out.println(companyDirPath);
 
-                for (filesOldCount = filesCount, filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                for (;
                      filesCount - filesOldCount < 50;
                      filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-                    TimeUnit.MINUTES.sleep(50 - filesCount - filesOldCount);
+                    TimeUnit.MINUTES.sleep(50 - (filesCount - filesOldCount));
                 }
+                countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
+
                 batchCalculate(spark, companyDirPath);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -86,7 +92,7 @@ public class Batch {
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
                 //.option("inferSchema", true)
-                //.option("header", true)л
+                //.option("header", true)
                 .option("delimiter", ",")
                 .option("charset", "UTF-8")
                 //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())

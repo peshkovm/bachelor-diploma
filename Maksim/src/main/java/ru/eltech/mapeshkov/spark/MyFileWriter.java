@@ -23,11 +23,8 @@ public class MyFileWriter {
                 throw new IllegalStateException("Couldn't create dir: " + parentFile);
             writer = new PrintWriter(
                     new BufferedWriter(
-                            new OutputStreamWriter(
-                                    new FileOutputStream(path.toFile()), StandardCharsets.UTF_8)
+                            new FileWriter(parentFile, false)
                     ), true);
-            writer.print("");
-            writer.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,5 +52,9 @@ public class MyFileWriter {
 
     public <T> void show(Dataset<T> data, int numRows, int truncate) {
         println(data.showString(numRows, truncate, true));
+    }
+
+    public void close() {
+        writer.close();
     }
 }
