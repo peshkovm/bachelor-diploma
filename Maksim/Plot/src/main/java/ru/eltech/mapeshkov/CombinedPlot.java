@@ -94,6 +94,10 @@ public class CombinedPlot extends ApplicationFrame {
         return seriesList.stream().map(series -> series.getKey()).collect(Collectors.toList());
     }
 
+    public void setMaxSeriesLength(int length) {
+        seriesList.forEach(series -> series.setMaximumItemCount(length));
+    }
+
     private static class LabeledXYDataset extends AbstractDataset {
 
     }
