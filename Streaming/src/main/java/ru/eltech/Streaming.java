@@ -50,9 +50,7 @@ public class Streaming {
 
         Model model = new Model("trained_out/Google/outModel");
 
-        PrintWriter printWriter = new PrintWriter(
-                new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream("prediction/pred.txt"))), true);
+        PrintWriter printWriter = new PrintWriter(new FileOutputStream("prediction/predict.txt", false), true);
 
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
@@ -76,9 +74,11 @@ public class Streaming {
                         Dataset<Row> predict = PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
 
                         List<Row> rows = predict.collectAsList();
-                        double realStock = Double.parseDouble(rows.get(0).mkString(",").split(",")[9]);
-                        double predictionStock = Double.parseDouble(rows.get(0).mkString(",").split(",")[17]);
+                        double realStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[9]);
+                        double predictionStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[17]);
 
+                        printWriter.print("");
+                        printWriter.flush();
                         printWriter.println(realStock + "," + predictionStock);
 
                         dataFrame.show();
