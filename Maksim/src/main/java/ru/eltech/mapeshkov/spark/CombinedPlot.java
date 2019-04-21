@@ -11,6 +11,7 @@ package ru.eltech.mapeshkov.spark;
         import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
         import org.jfree.chart.ui.ApplicationFrame;
         import org.jfree.data.general.AbstractDataset;
+        import org.jfree.data.xy.XYDataItem;
         import org.jfree.data.xy.XYDataset;
         import org.jfree.data.xy.XYSeries;
         import org.jfree.data.xy.XYSeriesCollection;

@@ -3,19 +3,15 @@ package ru.eltech.mapeshkov;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String inFileName = "";
-
-        BufferedReader reader = new BufferedReader(
-                new FileReader(inFileName));
+        PlotHelper plotHelper = new PlotHelper("");
 
         for (; ; ) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-
-            }
+            TimeUnit.SECONDS.sleep(1);
+            plotHelper.refresh();
         }
     }
 }
