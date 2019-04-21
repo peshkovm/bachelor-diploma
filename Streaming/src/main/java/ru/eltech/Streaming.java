@@ -41,7 +41,7 @@ public class Streaming {
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
         jssc.sparkContext().setLogLevel("ERROR");
 
-        JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
+        JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/Google/");
 
         ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
@@ -68,7 +68,7 @@ public class Streaming {
                         writer.show(labeledDataFrame);
                         Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
                         writer.show(windowedDataFrame);
-                        PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
+                        //PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }
