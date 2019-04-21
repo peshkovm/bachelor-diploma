@@ -7,6 +7,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import ru.eltech.mapeshkov.spark.Schemes;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -84,13 +85,7 @@ public class InDataRefactorUtils {
         else
             rowsLabeled = rows.subList(0, rows.size());
 
-        StructType schemaLabeled = new StructType(new StructField[]{
-                new StructField("company", DataTypes.StringType, false, Metadata.empty()),
-                new StructField("sentiment", DataTypes.StringType, false, Metadata.empty()),
-                new StructField("date", DataTypes.StringType, false, Metadata.empty()),
-                new StructField("today_stock", DataTypes.DoubleType, false, Metadata.empty()),
-                new StructField("label", DataTypes.DoubleType, true, Metadata.empty()),
-        });
+        StructType schemaLabeled = Schemes.SCHEMA_LABELED.getScheme();
 
         Dataset<Row> datasetLabeled = spark.createDataFrame(rowsLabeled, schemaLabeled);
 
@@ -192,25 +187,7 @@ public class InDataRefactorUtils {
             Collections.rotate(window, -1);
         }
 
-        ////////////fill schema///////////////////
-        ArrayList<StructField> structFieldList = new ArrayList<>();
-        StructField[] structFields = new StructField[2 * windowWidth + 1];
-
-        for (int i = windowWidth - 1; i >= 0; i--) {
-            if (i != 0) {
-                structFieldList.add(new StructField("sentiment_" + i, DataTypes.StringType, false, Metadata.empty()));
-                structFieldList.add(new StructField("stock_" + i, DataTypes.DoubleType, false, Metadata.empty()));
-            } else {
-                structFieldList.add(new StructField("sentiment_today", DataTypes.StringType, false, Metadata.empty()));
-                structFieldList.add(new StructField("stock_today", DataTypes.DoubleType, false, Metadata.empty()));
-                structFieldList.add(new StructField("label", DataTypes.DoubleType, true, Metadata.empty()));
-            }
-        }
-
-        structFields = structFieldList.toArray(structFields);
-        //////////////////////////////////////////
-
-        StructType schemaWindowed = new StructType(structFields);
+        StructType schemaWindowed = Schemes.SCHEMA_WINDOWED.getScheme();
 
         Dataset<Row> datasetWindowed = spark.createDataFrame(rowsWindowed, schemaWindowed);
 
