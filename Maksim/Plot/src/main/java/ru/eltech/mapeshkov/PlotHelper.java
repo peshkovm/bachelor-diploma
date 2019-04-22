@@ -15,9 +15,11 @@ public class PlotHelper {
 
     private final String[] keys = {"real stock", "prediction stock"};
 
-    public PlotHelper(final String fileName) throws IOException {
+    public PlotHelper(final String fileName) throws IOException, InterruptedException {
         this.fileName = fileName;
+
         plot = new CombinedPlot("news/stock plot", keys);
+
 
         refresh();
     }
@@ -30,12 +32,21 @@ public class PlotHelper {
 
             while ((line = reader.readLine()) != null) {
                 String[] split = line.split(",");
-                double realStock = Double.parseDouble(split[0]);
-                double predictionStock = Double.parseDouble(split[1]);
 
-                plot.addPoint(new XYDataItem(numOfNews, realStock), keys[0]);
-                plot.addPoint(new XYDataItem(++numOfNews, predictionStock), keys[1]);
+                if (split.length == 2) {
+                    double realStock = Double.parseDouble(split[0]);
+                    double predictionStock = Double.parseDouble(split[1]);
+
+                    plot.addPoint(new XYDataItem(numOfNews, realStock), keys[0]);
+                    plot.addPoint(new XYDataItem(++numOfNews, predictionStock), keys[1]);
+
+                    System.out.println(realStock + " " + predictionStock);
+                }
             }
         }
+    }
+
+    public void setMaxSeriesLength(int length) {
+        plot.setMaxSeriesLength(length);
     }
 }
