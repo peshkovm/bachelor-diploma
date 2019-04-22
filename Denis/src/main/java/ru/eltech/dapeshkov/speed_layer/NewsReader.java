@@ -23,7 +23,6 @@ public class NewsReader {
     private final ScheduledExecutorService ex = Executors.newScheduledThreadPool(4); // ExecutorService that runs the tasks
     private final String[] url;
     private final String out;
-    private static final AtomicInteger i = new AtomicInteger(0);
 
     /**
      * Initialize the instance of {@code NewsReader}.
@@ -55,9 +54,10 @@ public class NewsReader {
 
     public void start() {
         for (final String a : url) {
-            final Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=1&tag=" + a);
+            final Connection connection = new Connection("http://192.168.0.111:8080/Test_war_exploded/?tag=" + a);
             ex.scheduleAtFixedRate(new Runnable() {
                 private LocalDateTime lastpubdate = null;
+                private Integer i = 0;
 
                 @Override
                 public void run() {
@@ -66,10 +66,10 @@ public class NewsReader {
                         if (news != null && (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate))) {
                             lastpubdate = news.getItems()[0].getPublish_date();
                             final Item item = new Item(a, Processing.sentiment(news.getItems()[0].toString()), Timestamp.valueOf(lastpubdate), ApiUtils.AlphaVantageParser.getLatestStock(a).getChange());
-                            write(item.toString(), new FileOutputStream(out + a + "/" + i.incrementAndGet() + ".txt"));
+                            write(item.toString(), new FileOutputStream(out + a + "/" + i++ + ".txt"));
                         }
                     } catch (Throwable e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 }
             }, 0, 3, TimeUnit.SECONDS);

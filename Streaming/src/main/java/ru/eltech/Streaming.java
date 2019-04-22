@@ -18,10 +18,11 @@ import ru.eltech.mapeshkov.spark.MyFileWriter;
 import ru.eltech.mapeshkov.spark.PredictionUtils;
 import ru.eltech.mapeshkov.spark.in_data_refactor_utils.InDataRefactorUtils;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.apache.spark.sql.functions.col;
@@ -38,14 +39,15 @@ public class Streaming {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
-        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
+        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.milliseconds(10));
         jssc.sparkContext().setLogLevel("ERROR");
+        jssc.sparkContext().getConf().set("spark.sql.shuffle.partitions", "1");
 
-        JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/");
+        JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/Google/");
 
         ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
-        MyFileWriter writer = new MyFileWriter(Paths.get("logs/log1.txt"));
+        MyFileWriter writer = new MyFileWriter(Paths.get("logs/log1.txt")); //close
 
         Model model = new Model("trained_out/Google/outModel");
 
@@ -54,26 +56,31 @@ public class Streaming {
             return new Item(split[0], split[1], Timestamp.valueOf(split[2]), Double.valueOf(split[3]));
         });
 
+        final int[] i = {0};
+
         schemaJavaDStream.foreachRDD(rdd -> { //driver
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
             rdd.sortBy(Item::getDate, true, 1).collect().forEach(item -> { //driver
-                try {
+                try (PrintWriter printWriter = new PrintWriter(new FileOutputStream("D:/predict.txt", false), true)) {
                     arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
                         Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
                         PipelineModel pipelineModel = model.getModel();
-                        writer.show(dataFrame);
                         Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
-                        writer.show(labeledDataFrame);
                         Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
-                        writer.show(windowedDataFrame);
-                        PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
+                        Dataset<Row> predict = PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
+
+                        List<Row> rows = predict.collectAsList();
+                        double realStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[9]);
+                        double predictionStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[17]);
+
+                        printWriter.println(realStock + "," + predictionStock);
                         dataFrame.show();
                         arrayBlockingQueue.take();
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (InterruptedException | FileNotFoundException e) {
+                    e.printStackTrace();
                 }
             });
         });
