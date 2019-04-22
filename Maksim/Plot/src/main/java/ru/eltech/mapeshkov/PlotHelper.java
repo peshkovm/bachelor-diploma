@@ -38,4 +38,8 @@ public class PlotHelper {
             }
         }
     }
+
+    public void setMaxSeriesLength(int length) {
+        plot.setMaxSeriesLength(length);
+    }
 }
