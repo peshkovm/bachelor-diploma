@@ -6,12 +6,8 @@
 
     <!--Definition of groupId is redundant, because it's inherited from the parent-->
     <artifactId>Maksim</artifactId>
-    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
-
-    <modules>
-        <module>plot</module>
-    </modules>
+    <packaging>jar</packaging>
 
     <name>Maksim</name>
     <!-- FIXME change it to the project's website -->
@@ -50,11 +46,6 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.11</artifactId>
             <version>2.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.5.0</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
