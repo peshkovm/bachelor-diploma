@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        final PlotHelper plotHelper = new PlotHelper("C:\\JavaLessons\\bachelor-diploma\\Maksim\\Plot\\src\\main\\resources\\plotData.txt");
+        final PlotHelper plotHelper = new PlotHelper("working_files/prediction/predict.txt");
         plotHelper.setMaxSeriesLength(5);
 
         for (; ; ) {

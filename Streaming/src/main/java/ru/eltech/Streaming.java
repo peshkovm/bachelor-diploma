@@ -36,20 +36,21 @@ public class Streaming {
 
     public static void startRDD() throws IOException {
 
-        System.setProperty("hadoop.home.dir", "C:\\winutils\\");
+        System.setProperty("hadoop.home.dir", System.getProperty("user.dir") + "/" + "winutils");
+
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.milliseconds(10));
         jssc.sparkContext().setLogLevel("ERROR");
         jssc.sparkContext().getConf().set("spark.sql.shuffle.partitions", "1");
 
-        JavaDStream<String> stringJavaDStream = jssc.textFileStream("files/Google/");
+        JavaDStream<String> stringJavaDStream = jssc.textFileStream("working_files/files/Google/");
 
         ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
-        MyFileWriter writer = new MyFileWriter(Paths.get("logs/log1.txt")); //close
+        MyFileWriter writer = new MyFileWriter(Paths.get("working_files/logs/log1.txt")); //close
 
-        Model model = new Model("trained_out/Google/outModel");
+        Model model = new Model("working_files/trained_out/Google/outModel");
 
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
@@ -62,7 +63,7 @@ public class Streaming {
             SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
 
             rdd.sortBy(Item::getDate, true, 1).collect().forEach(item -> { //driver
-                try (PrintWriter printWriter = new PrintWriter(new FileOutputStream("D:/predict.txt", false), true)) {
+                try (PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/prediction/predict.txt", false), true)) {
                     arrayBlockingQueue.put(item);
                     if (arrayBlockingQueue.size() == 5) {
                         Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);

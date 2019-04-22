@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     public static void main(final String[] args) throws FileNotFoundException {
-        final NewsReader reader = new NewsReader("files/", "Google");
+        final NewsReader reader = new NewsReader("working_files/files/", "Google");
         reader.start();
     }
 }
