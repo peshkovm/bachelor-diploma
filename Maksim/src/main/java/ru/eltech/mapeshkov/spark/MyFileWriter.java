@@ -56,4 +56,8 @@ public class MyFileWriter {
     public <T> void show(Dataset<T> data, int numRows, int truncate) {
         println(data.showString(numRows, truncate, true));
     }
+
+    public void close() {
+        writer.close();
+    }
 }

@@ -58,7 +58,7 @@ public class JSONProcessor {
         return res;
     }
 
-    static class Item {
+    public static class Item {
         private String anons;
 
         @Override

@@ -1,10 +1,7 @@
 package ru.eltech.mapeshkov.spark;
 
-import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.Model;
 import org.apache.spark.ml.Pipeline;
-import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.clustering.KMeans;
@@ -18,14 +15,8 @@ import org.apache.spark.ml.tuning.CrossValidatorModel;
 import org.apache.spark.ml.tuning.ParamGridBuilder;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class PredictionUtils {
 
@@ -320,7 +311,7 @@ public class PredictionUtils {
         return crossValidatorModel.bestModel();
     }
 
-    public static void predict(Model<?> trainedModel, Dataset<Row> testDataset, MyFileWriter logWriter) {
+    public static Dataset<Row> predict(Model<?> trainedModel, Dataset<Row> testDataset, MyFileWriter logWriter) {
         logWriter.println("Test data:");
         logWriter.printSchema(testDataset);
         logWriter.show(testDataset);
@@ -338,10 +329,6 @@ public class PredictionUtils {
         double accuracy = evaluator.evaluate(predictions);
         logWriter.println("accuracy= " + accuracy);
 
-        ////////////////////PLOT/////////////////////
-        CombinedPlot plot = new CombinedPlot("Plot", predictions);
-        plot.pack();
-        plot.setVisible(true);
-        ////////////////////PLOT/////////////////////
+        return predictions;
     }
 }
