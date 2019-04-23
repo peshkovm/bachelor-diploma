@@ -1,6 +1,7 @@
 package ru.eltech;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.sql.*;
@@ -38,52 +39,40 @@ public class Streaming {
 
         System.setProperty("hadoop.home.dir", System.getProperty("user.dir") + "/" + "winutils");
 
-
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
-        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.milliseconds(10));
-        jssc.sparkContext().setLogLevel("ERROR");
+        JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
+        //jssc.sparkContext().setLogLevel("ERROR");
         jssc.sparkContext().getConf().set("spark.sql.shuffle.partitions", "1");
-
-        JavaDStream<String> stringJavaDStream = jssc.textFileStream("working_files/files/Google/");
-
-        ArrayBlockingQueue<Item> arrayBlockingQueue = new ArrayBlockingQueue<>(5);
 
         MyFileWriter writer = new MyFileWriter(Paths.get("working_files/logs/log1.txt")); //close
 
         Model model = new Model("working_files/trained_out/Google/outModel");
 
+        JavaDStream<String> stringJavaDStream = jssc.receiverStream(new Receiver("working_files/files/Google/", 5));
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
             return new Item(split[0], split[1], Timestamp.valueOf(split[2]), Double.valueOf(split[3]));
         });
 
-        final int[] i = {0};
-
         schemaJavaDStream.foreachRDD(rdd -> { //driver
-            SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
+            if (rdd.count() == 5) {
+                SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
+                JavaRDD<Item> sortedRDD = rdd.sortBy(Item::getDate, true, 1);
+                Dataset<Row> dataFrame = spark.createDataFrame(sortedRDD, Item.class);
+                PipelineModel pipelineModel = model.getModel();
+                Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
+                Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
+                Dataset<Row> predict = PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
 
-            rdd.sortBy(Item::getDate, true, 1).collect().forEach(item -> { //driver
+                List<Row> rows = predict.collectAsList();
+                double realStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[9]);
+                double predictionStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[17]);
+
                 try (PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/prediction/predict.txt", false), true)) {
-                    arrayBlockingQueue.put(item);
-                    if (arrayBlockingQueue.size() == 5) {
-                        Dataset<Row> dataFrame = spark.createDataFrame(new ArrayList<Item>(arrayBlockingQueue), Item.class);
-                        PipelineModel pipelineModel = model.getModel();
-                        Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
-                        Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
-                        Dataset<Row> predict = PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
-
-                        List<Row> rows = predict.collectAsList();
-                        double realStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[9]);
-                        double predictionStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[17]);
-
-                        printWriter.println(realStock + "," + predictionStock);
-                        dataFrame.show();
-                        arrayBlockingQueue.take();
-                    }
-                } catch (InterruptedException | FileNotFoundException e) {
-                    e.printStackTrace();
+                    printWriter.println(realStock + "," + predictionStock);
                 }
-            });
+                dataFrame.show();
+            }
         });
 
         jssc.start();
