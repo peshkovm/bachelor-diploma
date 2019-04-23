@@ -65,7 +65,10 @@ public class NewsReader {
                         final JSONProcessor.News news = JSONProcessor.parse(con.get(), JSONProcessor.News.class);
                         if (news != null && (lastpubdate == null || news.getItems()[0].getPublish_date().isAfter(lastpubdate))) {
                             lastpubdate = news.getItems()[0].getPublish_date();
-                            final Item item = new Item(a, Processing.sentiment(news.getItems()[0].toString()), Timestamp.valueOf(lastpubdate), ApiUtils.AlphaVantageParser.getLatestStock(a).getChange());
+                            final Item item = new Item(a, Processing.sentiment(news.getItems()[0].toString()), Timestamp.valueOf(LocalDateTime.now()), ApiUtils.AlphaVantageParser.getLatestStock(a).getPrice());
+                            write(item.toString(), new FileOutputStream(out + a + "/" + i++ + ".txt"));
+                        } else {
+                            final Item item = new Item(a, "neutral", Timestamp.valueOf(LocalDateTime.now()), ApiUtils.AlphaVantageParser.getLatestStock(a).getPrice());
                             write(item.toString(), new FileOutputStream(out + a + "/" + i++ + ".txt"));
                         }
                     } catch (Throwable e) {
