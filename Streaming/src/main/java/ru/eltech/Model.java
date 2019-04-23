@@ -12,12 +12,12 @@ public class Model {
     private String path;
 
     public Model(String path) throws IOException {
-        watcher = new Watcher(Paths.get(path));
+        watcher = new Watcher(Paths.get(path).getParent());
         this.path = path;
     }
 
     public PipelineModel getModel() {
-        if (model == null || watcher.check()) {
+        if (model == null || watcher.check(Paths.get(path).getFileName().toString())) {
             model = PipelineModel.load(path);
         }
 

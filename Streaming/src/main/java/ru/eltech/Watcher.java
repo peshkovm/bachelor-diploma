@@ -2,51 +2,55 @@ package ru.eltech;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Watcher {
 
     final private WatchService watchService;
-    final private String file;
+    private Path path;
 
     public Watcher(Path path) throws IOException {
         watchService = FileSystems.getDefault().newWatchService();
-        WatchKey key = path.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-        file = path.getName(path.getNameCount() - 1).toString();
+        WatchKey key = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
+        this.path = path;
     }
 
-    public void process(Action action) {
-        while (true) {
-            final WatchKey wk;
-            try {
-                wk = watchService.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
-            }
-            for (WatchEvent<?> event : wk.pollEvents()) {
-                final Path changed = (Path) event.context();
-                if (changed.endsWith(file)) {
-                    action.run();
-                }
-            }
-            // reset the key
-            boolean valid = wk.reset();
-            if (!valid) {
-                System.err.println("Key has been unregistered");
-            }
-        }
-    }
-
-    public boolean check() {
+    public List<Path> getChangedFiles(WatchEvent.Kind<Path> watchEvent) {
         final WatchKey wk;
+        try {
+            wk = watchService.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        List<Path> collect = wk.pollEvents().stream().filter(event -> event.kind() == watchEvent).map(event -> path.resolve((Path) event.context())).collect(Collectors.toList());
+        // reset the key
+        boolean valid = wk.reset();
+        if (!valid) {
+            System.err.println("Key has been unregistered");
+        }
+
+        return collect;
+    }
+
+    public boolean check(String file) {
+        final WatchKey wk;
+        boolean res = false;
 
         wk = watchService.poll();
 
         if (wk != null) {
             for (WatchEvent<?> event : wk.pollEvents()) {
                 final Path changed = (Path) event.context();
-                if (changed.endsWith(file)) {
-                    return true;
+                try {
+                    if (Files.isSameFile(changed, Paths.get(file))) {
+                        res = true;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
             // reset the key
@@ -55,6 +59,6 @@ public class Watcher {
                 System.err.println("Key has been unregistered");
             }
         }
-        return false;
+        return res;
     }
 }
