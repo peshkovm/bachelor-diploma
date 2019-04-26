@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Watcher {
@@ -36,7 +37,7 @@ public class Watcher {
         return collect;
     }
 
-    public boolean check(String file) {
+    public boolean check(WatchEvent.Kind<Path> watchEvent, String file) {
         final WatchKey wk;
         boolean res = false;
 
@@ -44,13 +45,15 @@ public class Watcher {
 
         if (wk != null) {
             for (WatchEvent<?> event : wk.pollEvents()) {
-                final Path changed = (Path) event.context();
-                try {
-                    if (Files.isSameFile(changed, Paths.get(file))) {
-                        res = true;
+                if (event.kind() == watchEvent) {
+                    final Path changed = (Path) event.context();
+                    try {
+                        if (Files.isSameFile(changed, Paths.get(file))) {
+                            res = true;
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
             // reset the key
@@ -59,6 +62,7 @@ public class Watcher {
                 System.err.println("Key has been unregistered");
             }
         }
+
         return res;
     }
 }

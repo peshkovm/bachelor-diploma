@@ -41,12 +41,12 @@ public class Streaming {
 
         SparkConf conf = new SparkConf().setMaster("local[4]").setAppName("NetworkWordCount");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(1));
-        //jssc.sparkContext().setLogLevel("ERROR");
+        jssc.sparkContext().setLogLevel("ERROR");
         jssc.sparkContext().getConf().set("spark.sql.shuffle.partitions", "1");
 
         MyFileWriter writer = new MyFileWriter(Paths.get("working_files/logs/log1.txt")); //close
 
-        Model model = new Model("working_files/trained_out/Google/outModel");
+        Model model = new Model("working_files/model/model");
 
         JavaDStream<String> stringJavaDStream = jssc.receiverStream(new Receiver("working_files/files/Google/", 5));
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {

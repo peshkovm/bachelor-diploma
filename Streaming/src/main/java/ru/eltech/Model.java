@@ -5,6 +5,7 @@ import org.apache.spark.ml.PipelineModel;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
 
 public class Model {
     private PipelineModel model = null;
@@ -17,8 +18,9 @@ public class Model {
     }
 
     public PipelineModel getModel() {
-        if (model == null || watcher.check(Paths.get(path).getFileName().toString())) {
+        if (model == null || watcher.check(StandardWatchEventKinds.ENTRY_MODIFY, Paths.get(path).getFileName().toString())) {
             model = PipelineModel.load(path);
+            System.out.println("loaded model");
         }
 
         return model;

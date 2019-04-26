@@ -37,8 +37,12 @@ public class Batch {
 
     }
 
+    public static void main(String[] args) throws Exception {
+        start();
+    }
+
     public static void start() throws Exception {
-        System.setProperty("hadoop.home.dir", "C:\\winutils\\");
+        System.setProperty("hadoop.home.dir", System.getProperty("user.dir") + "/" + "winutils");
 
         SparkSession spark = SparkSession
                 .builder()
@@ -52,37 +56,40 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
+        String companiesDirPath = "working_files/files/";
 
         HashMap<String, Long> countOfFilesMap = new HashMap<>();
 
-        //for (; ; ) {
-        Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
-            try {
-                countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
-                long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
-                long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+        for (; ; ) {
+            Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
+                try {
+                    countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
+                    long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
+                    long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                    final long countOfFileToUpdate = 10;
 
-                System.out.println(companyDirPath);
+                    System.out.println(companyDirPath);
 
-                for (;
-                     filesCount - filesOldCount < 50;
-                     filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-                    TimeUnit.MINUTES.sleep(50 - (filesCount - filesOldCount));
+                    for (;
+                         filesCount - filesOldCount < countOfFileToUpdate;
+                         filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
+                        //TimeUnit.SECONDS.sleep(countOfFileToUpdate - (filesCount - filesOldCount));
+                        TimeUnit.SECONDS.sleep(5);
+                    }
+                    countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
+
+                    batchCalculate(spark, companyDirPath);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
-
-                batchCalculate(spark, companyDirPath);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-        //}
+            });
+        }
     }
 
     private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
+        System.out.println("Batch");
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\logFiles\\" + companyDirPath.getFileName() + "\\spark Ml out.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get("working_files/logs/" + companyDirPath.getFileName() + "/out.txt"));
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
@@ -117,11 +124,11 @@ public class Batch {
 
         Model<?> trainedModel = PredictionUtils.trainSlidingWindowModel(trainingDatasetWindowed, 5, logWriter);
 
-/*        if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
-        }*/
+        if (trainedModel instanceof PipelineModel) {
+            ((PipelineModel) trainedModel).write().overwrite().save("working_files/model/model");
+        }
 
-        //////////////////////////////////
+        /*//////////////////////////////////
         Dataset<Row> testingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
                 //.option("inferSchema", true)
@@ -140,6 +147,6 @@ public class Batch {
 
         PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
 
-        //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
+        //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);*/
     }
 }

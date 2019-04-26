@@ -59,6 +59,13 @@ public class NewsReader {
                 private LocalDateTime lastpubdate = null;
                 private Integer i = 0;
 
+                {
+                    String[] arr = new File(a).list();
+                    if (arr != null) {
+                        i = arr.length;
+                    }
+                }
+
                 @Override
                 public void run() {
                     try (final Connection con = connection) {

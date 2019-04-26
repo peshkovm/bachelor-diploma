@@ -20,7 +20,7 @@ public class Main {
         /*final NewsReader reader = new NewsReader("working_files/files/", "Google");
         reader.start();*/
         LocalDateTime localDateTime = LocalDateTime.now();
-        int i = 0;
+        int i = 2565;
         Random rand1 = new Random();
         while (true) {
             PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/files/Google/" + i++ + ".txt", false), true);
