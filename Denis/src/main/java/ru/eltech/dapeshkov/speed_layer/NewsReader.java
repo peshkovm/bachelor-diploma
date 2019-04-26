@@ -60,9 +60,9 @@ public class NewsReader {
                 private Integer i = 0;
 
                 {
-                    String[] arr = new File(a).list();
+                    String[] arr = new File(out + a + "/").list();
                     if (arr != null) {
-                        i = arr.length;
+                        i = arr.length-1;
                     }
                 }
 

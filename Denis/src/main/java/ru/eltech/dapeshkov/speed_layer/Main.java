@@ -17,9 +17,9 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     public static void main(final String[] args) throws FileNotFoundException {
-        /*final NewsReader reader = new NewsReader("working_files/files/", "Google");
-        reader.start();*/
-        LocalDateTime localDateTime = LocalDateTime.now();
+        final NewsReader reader = new NewsReader("working_files/files/", "Google");
+        reader.start();
+        /*LocalDateTime localDateTime = LocalDateTime.now();
         int i = 2565;
         Random rand1 = new Random();
         while (true) {
@@ -33,6 +33,6 @@ public class Main {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
+        }*/
     }
 }
