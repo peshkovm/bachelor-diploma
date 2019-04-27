@@ -17,15 +17,14 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     public static void main(final String[] args) throws FileNotFoundException {
-        final NewsReader reader = new NewsReader("working_files/files/", "Google");
-        reader.start();
-        /*LocalDateTime localDateTime = LocalDateTime.now();
-        int i = 2565;
-        Random rand1 = new Random();
+        //final NewsReader reader = new NewsReader("working_files/files/", "Google");
+        //reader.start();
+        LocalDateTime localDateTime = LocalDateTime.now();
+        int i = 462;
         while (true) {
             PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/files/Google/" + i++ + ".txt", false), true);
             Timestamp timestamp = Timestamp.valueOf(localDateTime);
-            printWriter.println("Google,neutral," + timestamp + "," + rand1.nextInt(100));
+            printWriter.println("Google,neutral," + timestamp + "," + i);
             printWriter.close();
             localDateTime = localDateTime.plusMinutes(1);
             try {
@@ -33,6 +32,6 @@ public class Main {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }*/
+        }
     }
 }

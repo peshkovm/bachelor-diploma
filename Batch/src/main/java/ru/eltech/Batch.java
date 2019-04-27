@@ -70,12 +70,13 @@ public class Batch {
 
                     System.out.println(companyDirPath);
 
-                    for (;
+                    /*for (;
                          filesCount - filesOldCount < countOfFileToUpdate;
                          filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
                         //TimeUnit.SECONDS.sleep(countOfFileToUpdate - (filesCount - filesOldCount));
                         TimeUnit.SECONDS.sleep(5);
-                    }
+                    }*/
+                    TimeUnit.SECONDS.sleep(5);
                     countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
 
                     batchCalculate(spark, companyDirPath);

@@ -18,7 +18,7 @@ public class Model {
     }
 
     public PipelineModel getModel() {
-        if (model == null || watcher.check(StandardWatchEventKinds.ENTRY_MODIFY, Paths.get(path).getFileName().toString())) {
+        if (model == null || watcher.check(StandardWatchEventKinds.ENTRY_CREATE, Paths.get(path).getFileName().toString())) {
             model = PipelineModel.load(path);
             System.out.println("loaded model");
         }
