@@ -2,6 +2,7 @@ package ru.eltech.mapeshkov.spark;
 
 import org.apache.spark.ml.Model;
 import org.apache.spark.ml.Pipeline;
+import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
 import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.clustering.KMeans;
@@ -24,7 +25,7 @@ public class PredictionUtils {
     private PredictionUtils() {
     }
 
-    public static Model<?> trainSlidingWindowModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
+    public static Model<?> trainSlidingWindowWithSentimentModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
         //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
 /*        SparkSession spark = SparkSession
@@ -70,7 +71,7 @@ public class PredictionUtils {
             featuresInputColsList.add(stockList.get(i));
         }
 
-        String[] featuresInputCols = new String[2 * windowWidth];
+        String[] featuresInputCols = new String[featuresInputColsList.size()];
         featuresInputCols = featuresInputColsList.toArray(featuresInputCols);
 
         ArrayList<StringIndexerModel> sentimentIndexersModels = new ArrayList<>();
@@ -141,11 +142,11 @@ public class PredictionUtils {
                 .setPredictionCol("prediction");
 
         ArrayList<PipelineStage> pipelineStagesList = new ArrayList<>(sentimentIndexersModels);
-        PipelineStage[] pipelineStages = new PipelineStage[windowWidth + 2];
 
         pipelineStagesList.add(assembler);
         pipelineStagesList.add(lr); //regression
 
+        PipelineStage[] pipelineStages = new PipelineStage[pipelineStagesList.size()];
         pipelineStages = pipelineStagesList.toArray(pipelineStages);
 
         Pipeline pipeline = new Pipeline()
@@ -181,6 +182,142 @@ public class PredictionUtils {
         //PipelineModel pipelineModel = pipeline.fit(trainingDatasetWindowed);
         CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
         Model<?> bestModel = crossValidatorModel.bestModel();
+
+        return bestModel;
+    }
+
+    public static Model<?> trainSlidingWindowWithoutSentimentModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
+        //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
+
+/*        SparkSession spark = SparkSession
+                .builder()
+                .appName("Spark ML my application")
+                .config("spark.some.config.option", "some-value")
+                .master("local[*]")
+                .getOrCreate();
+
+        SparkContext conf = spark.sparkContext();
+
+        // Create a Java version of the Spark Context
+        JavaSparkContext sc = new JavaSparkContext(conf);*/
+        Dataset<Row> inDataCopy = trainingDatasetWindowed.toDF();
+
+        logWriter.println("Initial:");
+        logWriter.printSchema(inDataCopy);
+        logWriter.show(inDataCopy);
+
+        ArrayList<String> stockList = new ArrayList<>();
+
+        for (int i = windowWidth - 1; i >= 0; i--) {
+            if (i == 0) {
+                stockList.add("stock_today");
+            } else {
+                stockList.add("stock_" + i);
+            }
+        }
+
+        ArrayList<String> featuresInputColsList = new ArrayList<>();
+
+        for (int i = 0; i < windowWidth; i++) {
+            featuresInputColsList.add(stockList.get(i));
+        }
+
+        String[] featuresInputCols = new String[featuresInputColsList.size()];
+        featuresInputCols = featuresInputColsList.toArray(featuresInputCols);
+
+        VectorAssembler assembler = new VectorAssembler()
+                .setInputCols(featuresInputCols)
+                .setOutputCol("features");
+
+        inDataCopy = assembler.transform(inDataCopy);
+
+        logWriter.println("After assembler:");
+        logWriter.printSchema(inDataCopy);
+        logWriter.show(inDataCopy);
+
+        LinearRegression lr = new LinearRegression()
+                .setFeaturesCol("features")
+                .setLabelCol("label")
+                .setPredictionCol("prediction")
+                .setMaxIter(1000);
+
+        GeneralizedLinearRegression glr = new GeneralizedLinearRegression()
+                .setFeaturesCol("features")
+                .setLabelCol("label")
+                .setPredictionCol("prediction")
+                .setMaxIter(1000);
+        //.setRegParam(0.001);
+
+
+        LogisticRegression logr = new LogisticRegression()
+                .setFeaturesCol("features")
+                .setLabelCol("label")
+                .setPredictionCol("prediction")
+                .setMaxIter(10)
+                .setRegParam(0.01);
+
+        DecisionTreeRegressor dt = new DecisionTreeRegressor()
+                .setLabelCol("label")
+                .setFeaturesCol("features")
+                .setPredictionCol("prediction");
+
+        GBTRegressor gbt = new GBTRegressor()
+                .setLabelCol("label")
+                .setFeaturesCol("features")
+                .setPredictionCol("prediction")
+                .setMaxIter(50);
+
+        RandomForestRegressor rf = new RandomForestRegressor()
+                .setLabelCol("label")
+                .setFeaturesCol("features")
+                .setPredictionCol("prediction");
+
+        IsotonicRegression ir = new IsotonicRegression()
+                .setLabelCol("label")
+                .setFeaturesCol("features")
+                .setPredictionCol("prediction");
+
+        ArrayList<PipelineStage> pipelineStagesList = new ArrayList<>();
+
+        pipelineStagesList.add(assembler);
+        pipelineStagesList.add(lr); //regression
+
+        PipelineStage[] pipelineStages = new PipelineStage[pipelineStagesList.size()];
+        pipelineStages = pipelineStagesList.toArray(pipelineStages);
+
+        Pipeline pipeline = new Pipeline()
+                .setStages(pipelineStages);
+
+        logWriter.println("trainingData:");
+        logWriter.printSchema(trainingDatasetWindowed);
+        logWriter.show(trainingDatasetWindowed);
+
+        logWriter.println("trainingData count= " + trainingDatasetWindowed.count());
+        logWriter.println();
+
+        Evaluator evaluator = new MyEvaluator();
+
+        //lr
+        ParamMap[] paramGrid = new ParamGridBuilder()
+                .addGrid(lr.maxIter(), new int[]{10, 1000})
+                .addGrid(lr.regParam(), new double[]{0, 0.001})
+                .addGrid(lr.elasticNetParam(), new double[]{0, 0.5, 1})
+                .build();
+
+        //gbt
+/*        ParamMap[] paramGrid = new ParamGridBuilder()
+                .addGrid(gbt.maxIter(), new int[]{10, 30, 50})
+                .build();*/
+
+        CrossValidator crossValidator = new CrossValidator()
+                .setEstimator(pipeline)
+                .setEstimatorParamMaps(paramGrid)
+                .setEvaluator(evaluator)
+                .setNumFolds(2);
+
+        PipelineModel bestModel = pipeline.fit(trainingDatasetWindowed);
+        //CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
+        //Model<?> bestModel = crossValidatorModel.bestModel();
 
         return bestModel;
     }

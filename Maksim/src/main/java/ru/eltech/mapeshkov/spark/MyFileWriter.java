@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class MyFileWriter {
+public class MyFileWriter implements AutoCloseable {
     private PrintWriter writer;
     private static String projectDir = System.getProperty("user.dir");
 
@@ -57,6 +57,7 @@ public class MyFileWriter {
         println(data.showString(numRows, truncate, true));
     }
 
+    @Override
     public void close() {
         writer.close();
     }

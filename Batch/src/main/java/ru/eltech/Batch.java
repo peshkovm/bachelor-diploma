@@ -1,34 +1,20 @@
 package ru.eltech;
 
 import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.Model;
-import org.apache.spark.ml.PipelineModel;
-import org.apache.spark.ml.regression.LinearRegressionModel;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import ru.eltech.mapeshkov.spark.MyFileWriter;
 import ru.eltech.mapeshkov.spark.PredictionUtils;
 import ru.eltech.mapeshkov.spark.Schemes;
 import ru.eltech.mapeshkov.spark.in_data_refactor_utils.InDataRefactorUtils;
 
-import javax.sql.rowset.RowSetFactory;
-import javax.xml.bind.SchemaOutputResolver;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Batch {
 
@@ -62,13 +48,14 @@ public class Batch {
                 countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
                 long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
                 long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                final int numOfFilesToUpdate = 50;
 
                 System.out.println(companyDirPath);
 
                 for (;
-                     filesCount - filesOldCount < 50;
+                     filesCount - filesOldCount < numOfFilesToUpdate;
                      filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-                    TimeUnit.MINUTES.sleep(50 - (filesCount - filesOldCount));
+                    TimeUnit.MINUTES.sleep(numOfFilesToUpdate - (filesCount - filesOldCount));
                 }
                 countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
 
@@ -115,7 +102,7 @@ public class Batch {
 
         //Model<?> trainedModel = PredictionUtils.trainModel(trainingDatasetNotLabeled, logWriter);
 
-        Model<?> trainedModel = PredictionUtils.trainSlidingWindowModel(trainingDatasetWindowed, 5, logWriter);
+        Model<?> trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, 5, logWriter);
 
 /*        if (trainedModel instanceof PipelineModel) {
             ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
@@ -141,5 +128,7 @@ public class Batch {
         PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
 
         //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
+
+        logWriter.close();
     }
 }
