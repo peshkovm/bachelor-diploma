@@ -14,18 +14,18 @@ public class Main {
         //final NewsReader reader = new NewsReader("working_files/files/", "Google");
         //reader.start();
         LocalDateTime localDateTime = LocalDateTime.now();
-        int i = 462;
+        int i = 0;
         while (true) {
             PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/files/Google/" + i++ + ".txt", false), true);
             Timestamp timestamp = Timestamp.valueOf(localDateTime);
             printWriter.println("Google,neutral," + timestamp + "," + i);
             printWriter.close();
             localDateTime = localDateTime.plusMinutes(1);
-            try {
+            /*try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
     }
 }

@@ -1,14 +1,18 @@
 package ru.eltech.mapeshkov.plot;
 
-import java.util.concurrent.TimeUnit;
+import ru.eltech.dapeshkov.plot.Watcher;
+
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
 
 public class Main {
     public static void main(String[] args) throws Exception {
         final PlotHelper plotHelper = new PlotHelper("working_files/prediction/predict.txt");
-        plotHelper.setMaxSeriesLength(5);
+        final Watcher watcher = new Watcher(Paths.get("working_files/prediction/"));
+        //plotHelper.setMaxSeriesLength(5);
 
         for (; ; ) {
-            TimeUnit.SECONDS.sleep(3);
+            watcher.take(StandardWatchEventKinds.ENTRY_CREATE, "predict.txt");
             plotHelper.refresh();
             System.out.print("plot refreshed: ");
         }
