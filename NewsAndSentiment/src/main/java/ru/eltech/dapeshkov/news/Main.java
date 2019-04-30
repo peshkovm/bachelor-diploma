@@ -11,9 +11,9 @@ import java.sql.Timestamp;
 public class Main {
 
     public static void main(final String[] args) throws FileNotFoundException {
-        //final NewsReader reader = new NewsReader("working_files/files/", "Google");
+        //final NewsReader reader = new NewsReader("working_files/files/", "Google", "Facebook", "Gazprom");
         //reader.start();
-        LocalDateTime localDateTime = LocalDateTime.now();
+        /*LocalDateTime localDateTime = LocalDateTime.now();
         int i = 0;
         while (true) {
             PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/files/Google/" + i++ + ".txt", false), true);
@@ -21,11 +21,11 @@ public class Main {
             printWriter.println("Google,neutral," + timestamp + "," + i);
             printWriter.close();
             localDateTime = localDateTime.plusMinutes(1);
-            /*try {
+            try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }*/
-        }
+            }
+        }*/
     }
 }
