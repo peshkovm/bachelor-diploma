@@ -15,7 +15,6 @@ buildNumber.properties
 .idea
 *.iml
 out*.txt
-files/
 test
 classes/
 META-INF/
