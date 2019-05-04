@@ -1,11 +1,7 @@
 package ru.eltech.mapeshkov.mlib.in_data_refactor_utils;
 
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import ru.eltech.mapeshkov.mlib.Schemes;
 
@@ -13,9 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static org.apache.spark.sql.functions.asc;
-import static org.apache.spark.sql.functions.desc;
 
 public class InDataRefactorUtils {
 
@@ -41,7 +34,7 @@ public class InDataRefactorUtils {
         return dataset.orderBy(functions.asc("date"));
     }
 
-    public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled, boolean addNaNLabel) {
+    public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled, boolean containNaNLabel) {
         Dataset<Row> datasetNotLabeledCopy = datasetNotLabeled.toDF();
         datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("date", new Column("date").cast(DataTypes.StringType));
         datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("label", functions.lit(Double.NaN));
@@ -94,7 +87,7 @@ public class InDataRefactorUtils {
 
         List<Row> rowsLabeled;
 
-        if (addNaNLabel)
+        if (!containNaNLabel)
             rowsLabeled = rows.subList(0, rows.size() - 1);
         else
             rowsLabeled = rows.subList(0, rows.size());

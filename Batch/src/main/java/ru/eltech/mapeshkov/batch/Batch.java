@@ -3,6 +3,7 @@ package ru.eltech.mapeshkov.batch;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.Model;
+import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.StructType;
 import ru.eltech.mapeshkov.mlib.MyFileWriter;
@@ -38,7 +39,7 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction";
+        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\testing batch in files for prediction";
 
         HashMap<String, Long> countOfFilesMap = new HashMap<>();
 
@@ -69,7 +70,8 @@ public class Batch {
 
     private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\logFiles\\" + companyDirPath.getFileName() + "\\mlib Ml out.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\logFiles\\" + companyDirPath.getFileName() + "\\mlib Ml out.txt"));
+        final int windowWidth = 5;
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
@@ -95,39 +97,18 @@ public class Batch {
         logWriter.printSchema(trainingDatasetLabeled);
         logWriter.show(trainingDatasetLabeled);
 
-        Dataset<Row> trainingDatasetWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, trainingDatasetLabeled, 5);
+        Dataset<Row> trainingDatasetWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, trainingDatasetLabeled, windowWidth);
 
         logWriter.printSchema(trainingDatasetWindowed);
         logWriter.show(trainingDatasetWindowed);
 
         //Model<?> trainedModel = PredictionUtils.trainModel(trainingDatasetNotLabeled, logWriter);
 
-        Model<?> trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, 5, logWriter);
+        Model<?> trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
 
-/*        if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\" + companyDirPath.getFileName() + "outModel");
-        }*/
-
-        //////////////////////////////////
-        Dataset<Row> testingDatasetNotLabeled = spark.read()
-                .schema(schemaNotLabeled)
-                //.option("inferSchema", true)
-                //.option("header", true)л
-                .option("delimiter", ",")
-                .option("charset", "UTF-8")
-                //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
-                .csv("D:\\testData")
-                .toDF("company", "sentiment", "date", "today_stock")
-                .cache();
-        //////////////////////////////////
-
-        Dataset<Row> testingDataNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, testingDatasetNotLabeled, schemaNotLabeled);
-        Dataset<Row> testingDataLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, testingDataNotLabeledSorted, false);
-        Dataset<Row> testingDataWindowed = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, testingDataLabeled, 5);
-
-        PredictionUtils.predict(trainedModel, testingDataWindowed, logWriter);
-
-        //PredictionUtils.predict(trainedModel, trainingDatasetWindowed, logWriter);
+        if (trainedModel instanceof PipelineModel) {
+            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\models\\" + companyDirPath.getFileName());
+        }
 
         logWriter.close();
     }

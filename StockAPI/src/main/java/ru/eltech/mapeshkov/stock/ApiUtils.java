@@ -100,6 +100,35 @@ public class ApiUtils {
 
             return stockInfo;
         }
+
+        public static CompanyInfo getSymbolFromCompanyName(String companyName) {
+            final String function = "SYMBOL_SEARCH";
+            final String datatype = "json";
+            CompanyInfo companyInfo;
+
+            try {
+                final URL url = new URL("https://www.alphavantage.co/query" +
+                        "?function=" + function +
+                        "&keywords=" + companyName +
+                        "&datatype=" + datatype +
+                        "&apikey=TF0UUHCZB8SBMXDP");
+
+                JsonNode node = getNodeFromUrl(url);
+
+                if ((node = excessHandler(node, "bestMatches")) == null)
+                    return null;
+
+                node = node.path(0);
+
+                companyInfo = mapper.treeToValue(node, CompanyInfo.class);
+
+            } catch (IOException e) {
+                companyInfo = null;
+                e.printStackTrace();
+            }
+
+            return companyInfo;
+        }
     }
 
     private static JsonNode getNodeFromUrl(URL url) throws IOException {
@@ -117,35 +146,6 @@ public class ApiUtils {
 
     private static <T> T getPojoStockData(JsonNode node, Class<T> clazz) throws IOException {
         return mapper.treeToValue(node, clazz);
-    }
-
-    private static CompanyInfo getSymbolFromCompanyName(String companyName) {
-        final String function = "SYMBOL_SEARCH";
-        final String datatype = "json";
-        CompanyInfo companyInfo;
-
-        try {
-            final URL url = new URL("https://www.alphavantage.co/query" +
-                    "?function=" + function +
-                    "&keywords=" + companyName +
-                    "&datatype=" + datatype +
-                    "&apikey=TF0UUHCZB8SBMXDP");
-
-            JsonNode node = getNodeFromUrl(url);
-
-            if ((node = excessHandler(node, "bestMatches")) == null)
-                return null;
-
-            node = node.path(0);
-
-            companyInfo = mapper.treeToValue(node, CompanyInfo.class);
-
-        } catch (IOException e) {
-            companyInfo = null;
-            e.printStackTrace();
-        }
-
-        return companyInfo;
     }
 
     private static JsonNode excessHandler(final JsonNode node, final String path) throws IOException {

@@ -40,6 +40,11 @@ public class MyFileWriter implements AutoCloseable {
         writer.println();
     }
 
+    public void print(Object obj) {
+        writer.print(obj);
+        writer.flush();
+    }
+
     public <T> void printSchema(Dataset<T> data) {
         println(data.schema().treeString());
     }
