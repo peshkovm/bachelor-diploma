@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is a parser of Connection.
+ * This class is a.txt parser of Connection.
  * It outputs the contents of item to the files, also this class saves the value of most recent post in Connection and outputs only newly added posts, when Connection is updated.
  */
 
@@ -34,7 +34,7 @@ class StaxStreamProcessor {
                     final String str = getElement(reader, "item");
                     if (str != null) {
                         final ZonedDateTime pubdate = getDate(str); //gets the date of the item
-                        if (lastpubdate == null || lastpubdate.isBefore(pubdate)) { //if it is a new item (the date of the item is after the lastpubdate)
+                        if (lastpubdate == null || lastpubdate.isBefore(pubdate)) { //if it is a.txt new item (the date of the item is after the lastpubdate)
                             if (time == null || pubdate.isAfter(time)) {//time will be the max date of the items in given Connection
                                 time = pubdate;
                             }

@@ -48,7 +48,7 @@ public class NewsReader {
     /**
      * This method requests all given sites and outputs the contents to the given files.
      * Most of the time this method should be invoked only once.
-     * Method works as a service running all the time with 3 second interval
+     * Method works as a.txt service running all the time with 3 second interval
      */
 
     public void start() {
