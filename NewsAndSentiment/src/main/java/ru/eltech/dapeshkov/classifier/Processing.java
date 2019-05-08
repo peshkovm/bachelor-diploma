@@ -7,16 +7,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Processing {
 
-    private static final Map<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
-    private static final Map<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
+    private static final HashMap<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
+    private static final HashMap<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
     private static final Set<String> hash = new HashSet<>();
     private static int count = 0;
     private static int n;
-    static final private String[] category = {"positive", "negative", "neutral"};
+    static final private String[] category = {"positive", "negative", "neutral" };
 
     static {
         try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
@@ -70,8 +71,8 @@ public class Processing {
 
     private static String[] parse(final String str, final int n) {
         String[] res = str.toLowerCase().split("[^\\p{L}]+");
+        if (res.length < n) return null;
         res = Arrays.stream(res).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
-
         res = ngram(res, n);
 
         return res;
@@ -95,7 +96,7 @@ public class Processing {
 
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/final/train1_1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -105,9 +106,24 @@ public class Processing {
 
         Arrays.stream(arr).unordered().forEach(i -> {
             final String[] strings = parse(i.getText(), Processing.n);
-            Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
-            prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
+            if (strings != null) {
+                Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
+                prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
+            }
         });
+
+
+
+        Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
+        entryComparator = entryComparator.reversed();
+
+        Map<Pair, Double> negative = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("negative")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Pair, Double> neutral = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("neutral")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Pair, Double> positive = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("positive")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        likelihood.clear();
+        likelihood.putAll(negative);
+        likelihood.putAll(neutral);
+        likelihood.putAll(positive);
     }
 
     private static Double classify_cat(final String str, final String... arr) {
@@ -119,6 +135,9 @@ public class Processing {
 
     static public String sentiment(final String str) {
         final String[] arr = parse(str, Processing.n);
+        if (arr == null) {
+            return null;
+        }
 
         return Arrays.stream(category).unordered()
                 .max(Comparator.comparingDouble(o -> classify_cat(o, arr)))
@@ -126,6 +145,25 @@ public class Processing {
     }
 
     public static void main(final String[] args) {
-        train(2);
+        train(1);
+        JSONProcessor.Train[] arr = null;
+
+        try (InputStream in = Processing.class.getResourceAsStream("/final/test1_2.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int i = 0;
+        for (JSONProcessor.Train a : arr) {
+            String sentiment = sentiment(a.getText());
+            if (sentiment == null) {
+                continue;
+            }
+            String sentiment1 = a.getSentiment();
+            if (sentiment.equals(sentiment1)) {
+                i++;
+            }
+        }
+        System.out.println((i / (double) arr.length) * 100);
     }
 }
