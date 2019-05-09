@@ -37,6 +37,11 @@ public class NewsReader {
         System.out.println("Ready");
     }
 
+    /**
+     * writes {@link String} to file
+     * @param str {@link String} to write to file
+     * @param out file name
+     */
     synchronized void write(final String str, final OutputStream out) {
         try (final PrintWriter writer = new PrintWriter(
                 new BufferedWriter(
@@ -48,7 +53,7 @@ public class NewsReader {
     /**
      * This method requests all given sites and outputs the contents to the given files.
      * Most of the time this method should be invoked only once.
-     * Method works as a service running all the time with 3 second interval
+     * Method works as a.txt service running all the time with 3 second interval
      */
 
     public void start() {

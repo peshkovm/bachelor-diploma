@@ -42,13 +42,17 @@ public class Streaming {
         jssc.sparkContext().setLogLevel("ERROR");
         jssc.sparkContext().getConf().set("mlib.sql.shuffle.partitions", "1");
 
+        //logs
         MyFileWriter writer = new MyFileWriter(Paths.get("working_files/logs/log1.txt")); //close
 
+        //mlib model
         Model model = new Model("working_files/model/model");
 
+        //reading data news
         JavaDStream<String> stringJavaDStream = jssc.receiverStream(new Receiver("working_files/files/Google/", 5));
         JavaDStream<Item> schemaJavaDStream = stringJavaDStream.map(str -> {
             String[] split = str.split(",");
+            //POJO
             return new Item(split[0], split[1], Timestamp.valueOf(split[2]), Double.valueOf(split[3]));
         });
 
@@ -57,19 +61,26 @@ public class Streaming {
                 SparkSession spark = SparkSession.builder().config(rdd.context().getConf()).getOrCreate();
                 JavaRDD<Item> sortedRDD = rdd.sortBy(Item::getDate, true, 1);
                 Dataset<Row> dataFrame = spark.createDataFrame(sortedRDD, Item.class);
+                //get mlib model
                 PipelineModel pipelineModel = model.getModel();
+                //some data refactoring
                 Dataset<Row> labeledDataFrame = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, dataFrame, false);
                 Dataset<Row> windowedDataFrame = InDataRefactorUtils.reformatInDataToSlidingWindowLayout(spark, labeledDataFrame, 5);
+                //prediction
                 Dataset<Row> predict = PredictionUtils.predict(pipelineModel, windowedDataFrame, writer);
 
                 List<Row> rows = predict.collectAsList();
+                //real stock on today
                 double realStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[9]);
+                //prediciton stock
                 double predictionStock = Double.parseDouble(rows.get(0).mkString(";").split(";")[17]);
 
+                //writes real stock and prediciton to file
                 try (PrintWriter printWriter = new PrintWriter(new FileOutputStream("working_files/prediction/predict.txt", false), true)) {
                     printWriter.println(realStock + "," + predictionStock);
                     System.out.println("predict");
                 }
+                //debugging
                 dataFrame.show();
             }
         });

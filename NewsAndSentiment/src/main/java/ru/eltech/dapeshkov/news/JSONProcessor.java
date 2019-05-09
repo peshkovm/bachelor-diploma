@@ -12,6 +12,9 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
+/**
+ * class for JSON parsing and writing
+ */
 public class JSONProcessor {
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -24,6 +27,12 @@ public class JSONProcessor {
 
     }
 
+    /**
+     * parses JSON into POJO
+     * @param str JSON to parse
+     * @param cl POJO class
+     * @return POJO
+     */
     public static <T> T parse(final String str, final Class<T> cl) {
         T json = null;
         if (str != null) {
@@ -36,6 +45,12 @@ public class JSONProcessor {
         return json;
     }
 
+    /**
+     * parses JSON into POJO
+     * @param in JSON to parse
+     * @param cl POJO class
+     * @return POJO
+     */
     public static <T> T parse(final InputStream in, final Class<T> cl) {
         T json = null;
         if (in != null) {
@@ -48,6 +63,11 @@ public class JSONProcessor {
         return json;
     }
 
+    /**
+     * writes JSON to {@link String}
+     * @param obj JSON
+     * @return {@link String} representing JSON
+     */
     public static <T> String write(final T obj) {
         String res = null;
         try {
@@ -58,6 +78,10 @@ public class JSONProcessor {
         return res;
     }
 
+
+    /**
+     * POJO represents news article
+     */
     public static class Item {
         private String anons;
 
@@ -161,6 +185,9 @@ public class JSONProcessor {
         }
     }
 
+    /**
+     * POJO represents photo in news article
+     */
     static class Photo {
         @Override
         public String toString() {
@@ -180,6 +207,9 @@ public class JSONProcessor {
         }
     }
 
+    /**
+     * POJO represents news
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class News {
         private Item[] items;
@@ -198,6 +228,9 @@ public class JSONProcessor {
         }
     }
 
+    /**
+     * POJO represents train dataset record
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Train {
         String text;
