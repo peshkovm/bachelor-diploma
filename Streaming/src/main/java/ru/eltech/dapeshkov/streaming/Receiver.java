@@ -11,10 +11,18 @@ import java.nio.file.StandardWatchEventKinds;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Receiver to push data to Apache Streaming
+ * We need it because we of sliding-window
+ */
 public class Receiver extends org.apache.spark.streaming.receiver.Receiver<String> {
     private final String directory;
     private final int window;
 
+    /**
+     * @param directory the path to directory to read files from
+     * @param window size of window (how many messages should be accumulated before pushing to Apache Spark)
+     */
     public Receiver(String directory, int window) {
         super(StorageLevel.MEMORY_AND_DISK_2());
         this.directory = directory;

@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * This class represents the connection to Connection.
+ * This class represents the connection to URL.
  * The {@link Connection#close() } should be called after reading all necessary information from Connection to close the connection and {@link InputStream}.
  */
 
@@ -59,6 +59,10 @@ public class Connection implements AutoCloseable {
         return in;
     }
 
+
+    /**
+     * closes connection
+     */
     @Override
     public void close() {
         try {

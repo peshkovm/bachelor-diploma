@@ -37,6 +37,11 @@ public class NewsReader {
         System.out.println("Ready");
     }
 
+    /**
+     * writes {@link String} to file
+     * @param str {@link String} to write to file
+     * @param out file name
+     */
     synchronized void write(final String str, final OutputStream out) {
         try (final PrintWriter writer = new PrintWriter(
                 new BufferedWriter(
