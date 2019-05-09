@@ -126,7 +126,7 @@ public class Processing {
         JSONProcessor.Train[] arr = null;
 
         //reads train data
-        try (InputStream in = Processing.class.getResourceAsStream("/final/train1_1.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
