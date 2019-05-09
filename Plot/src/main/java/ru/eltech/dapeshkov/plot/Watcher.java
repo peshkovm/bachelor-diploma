@@ -5,15 +5,30 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Watcher directory for changes
+ */
+
 public class Watcher {
 
     final private WatchService watchService;
+
+    /**
+     * creates new {@link Watcher} instance
+     * @param path path to directory to watch for changes
+     * @throws IOException
+     */
 
     public Watcher(Path path) throws IOException {
         watchService = FileSystems.getDefault().newWatchService();
         WatchKey key = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
     }
 
+    /**
+     * waits for file to change
+     * @param watchEvent what kind of event to watch
+     * @param file path to file
+     */
     public void take(WatchEvent.Kind<Path> watchEvent, String file) {
         WatchKey wk = null;
 
