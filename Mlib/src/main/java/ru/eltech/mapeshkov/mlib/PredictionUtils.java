@@ -19,12 +19,24 @@ import org.apache.spark.sql.Row;
 
 import java.util.ArrayList;
 
+/**
+ * Class that contains util methods for prediction
+ */
 public class PredictionUtils {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private PredictionUtils() {
     }
 
+    /**
+     * Trains linear regression model for sliding window with sentiment prediction
+     *
+     * @param trainingDatasetWindowed
+     * @param windowWidth
+     * @param logWriter
+     * @return
+     * @throws Exception
+     */
     public static Model<?> trainSlidingWindowWithSentimentModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
         //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
@@ -186,6 +198,15 @@ public class PredictionUtils {
         return bestModel;
     }
 
+    /**
+     * Trains linear regression model for sliding window without sentiment prediction
+     *
+     * @param trainingDatasetWindowed
+     * @param windowWidth
+     * @param logWriter
+     * @return
+     * @throws Exception
+     */
     public static Model<?> trainSlidingWindowWithoutSentimentModel(Dataset<Row> trainingDatasetWindowed, int windowWidth, MyFileWriter logWriter) throws Exception {
         //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
@@ -322,6 +343,13 @@ public class PredictionUtils {
         return bestModel;
     }
 
+    /**
+     * Trains linear regression model for not-sliding window prediction
+     *
+     * @param trainingDataset
+     * @param logWriter
+     * @return
+     */
     public static Model<?> trainModel(Dataset<Row> trainingDataset, MyFileWriter logWriter) {
         //System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
@@ -448,6 +476,14 @@ public class PredictionUtils {
         return crossValidatorModel.bestModel();
     }
 
+    /**
+     * Predicts labels of given dataset
+     *
+     * @param trainedModel
+     * @param testDataset
+     * @param logWriter
+     * @return
+     */
     public static Dataset<Row> predict(Model<?> trainedModel, Dataset<Row> testDataset, MyFileWriter logWriter) {
         logWriter.println("Test data:");
         logWriter.printSchema(testDataset);

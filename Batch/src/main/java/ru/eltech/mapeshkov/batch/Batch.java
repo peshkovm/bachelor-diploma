@@ -17,14 +17,23 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Class that represents batch-layer in lambda-architecture
+ */
 public class Batch {
-
     // Suppresses default constructor, ensuring non-instantiability.
     private Batch() {
 
     }
 
-    public static void start() throws Exception {
+    /**
+     * Starts batch-layer
+     *
+     * @param companiesDirectoryPath
+     * @param isWithSentiment
+     * @throws Exception
+     */
+    public static void start(final String companiesDirectoryPath, final boolean isWithSentiment) throws Exception {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkSession spark = SparkSession
@@ -39,39 +48,41 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\testing batch in files for prediction";
+        String companiesDirPath = companiesDirectoryPath + "\\testing batch in files for prediction";
 
         HashMap<String, Long> countOfFilesMap = new HashMap<>();
 
         //for (; ; ) {
-        Files.list(Paths.get(companiesDirPath)).filter(path -> path.toFile().isDirectory()).forEach(companyDirPath -> {
-            try {
-                countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
-                long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
-                long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
-                final int numOfFilesToUpdate = 50;
+        Files.list(Paths.get(companiesDirPath))
+                .filter(path -> path.toFile().isDirectory())
+                .forEach(companyDirPath -> {
+                    try {
+                        countOfFilesMap.putIfAbsent(companyDirPath.getFileName().toString(), 0L);
+                        long filesOldCount = countOfFilesMap.get(companyDirPath.getFileName().toString());
+                        long filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count();
+                        final int numOfFilesToUpdate = 0;
 
-                System.out.println(companyDirPath);
+                        System.out.println(companyDirPath);
 
-                for (;
-                     filesCount - filesOldCount < numOfFilesToUpdate;
-                     filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
-                    TimeUnit.MINUTES.sleep(numOfFilesToUpdate - (filesCount - filesOldCount));
-                }
-                countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
+                        for (;
+                             filesCount - filesOldCount < numOfFilesToUpdate;
+                             filesCount = Files.list(companyDirPath).filter(path -> path.toFile().isFile()).count()) {
+                            TimeUnit.MINUTES.sleep(numOfFilesToUpdate - (filesCount - filesOldCount));
+                        }
+                        countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
 
-                batchCalculate(spark, companyDirPath);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+                        batchCalculate(spark, companyDirPath, companiesDirectoryPath, isWithSentiment);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
         //}
     }
 
-    private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
+    private static void batchCalculate(SparkSession spark, Path companyDirPath, String companiesDirPath, boolean isWithSentiment) throws Exception {
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\logFiles\\" + companyDirPath.getFileName() + "\\mlib Ml out.txt"));
-        final int windowWidth = 5;
+        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
+        final int windowWidth = Schemes.SCHEMA_WINDOWED.getWindowWidth();
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
                 .schema(schemaNotLabeled)
@@ -81,8 +92,8 @@ public class Batch {
                 .option("charset", "UTF-8")
                 //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
                 .csv(companyDirPath.toString())
-                .toDF("company", "sentiment", "date", "today_stock")
-                .cache();
+                .toDF("company", "sentiment", "date", "today_stock");
+        //.cache();
 
         logWriter.printSchema(trainingDatasetNotLabeled);
         logWriter.show(trainingDatasetNotLabeled);
@@ -92,7 +103,7 @@ public class Batch {
         logWriter.printSchema(trainingDatasetNotLabeledSorted);
         logWriter.show(trainingDatasetNotLabeledSorted);
 
-        Dataset<Row> trainingDatasetLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, trainingDatasetNotLabeledSorted, true);
+        Dataset<Row> trainingDatasetLabeled = InDataRefactorUtils.reformatNotLabeledDataToLabeled(spark, trainingDatasetNotLabeledSorted, false);
 
         logWriter.printSchema(trainingDatasetLabeled);
         logWriter.show(trainingDatasetLabeled);
@@ -104,10 +115,14 @@ public class Batch {
 
         //Model<?> trainedModel = PredictionUtils.trainModel(trainingDatasetNotLabeled, logWriter);
 
-        Model<?> trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
+        Model<?> trainedModel;
+        if (isWithSentiment)
+            trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
+        else
+            trainedModel = PredictionUtils.trainSlidingWindowWithoutSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
 
         if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\models\\" + companyDirPath.getFileName());
+            ((PipelineModel) trainedModel).write().overwrite().save(companiesDirPath + "\\models\\" + companyDirPath.getFileName());
         }
 
         logWriter.close();

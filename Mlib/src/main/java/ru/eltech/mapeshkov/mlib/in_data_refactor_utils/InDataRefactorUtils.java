@@ -10,12 +10,23 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Class that contains util methods for data used in prediction refactoring
+ */
 public class InDataRefactorUtils {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private InDataRefactorUtils() {
     }
 
+    /**
+     * Sorts in dataset by date
+     *
+     * @param spark
+     * @param dataset
+     * @param schema
+     * @return
+     */
     public static Dataset<Row> sortByDate(final SparkSession spark, final Dataset<Row> dataset, final StructType schema) {
 /*        List<Row> rows = dataset.collectAsList();
         String[] columns = dataset.columns();
@@ -34,6 +45,15 @@ public class InDataRefactorUtils {
         return dataset.orderBy(functions.asc("date"));
     }
 
+    /**
+     * Reformats not labeled dataset to labeled
+     *
+     * @param spark
+     * @param datasetNotLabeled not labeled dataset
+     * @param containNaNLabel   define if contain NaN label in labeled data.
+     *                          More precisely it defines if last record with unlabeled label will be include in dataset
+     * @return
+     */
     public static Dataset<Row> reformatNotLabeledDataToLabeled(final SparkSession spark, final Dataset<Row> datasetNotLabeled, boolean containNaNLabel) {
         Dataset<Row> datasetNotLabeledCopy = datasetNotLabeled.toDF();
         datasetNotLabeledCopy = datasetNotLabeledCopy.withColumn("date", new Column("date").cast(DataTypes.StringType));
@@ -99,6 +119,15 @@ public class InDataRefactorUtils {
         return datasetLabeled;
     }
 
+    /**
+     * Reformats not-windowed data to windowed data.
+     * This method reformats in-dataset for usage in sliding window prediction
+     *
+     * @param spark
+     * @param datasetNotWindowed not windowed dataset
+     * @param windowWidth        width of the sliding window
+     * @return
+     */
     public static Dataset<Row> reformatInDataToSlidingWindowLayout(final SparkSession spark, final Dataset<Row> datasetNotWindowed, int windowWidth) {
         class WindowDataPair {
             private String sentiment = "";
