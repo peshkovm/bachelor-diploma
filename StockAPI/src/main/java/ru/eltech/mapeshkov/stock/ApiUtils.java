@@ -15,9 +15,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * This class contains various methods for parsing api from
- * <a href="https://www.alphavantage.co/documentation/">
- * <i>Alpha Vantage</i></a> site
+ * This util class contains various methods for parsing api
  */
 public class ApiUtils {
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -27,11 +25,23 @@ public class ApiUtils {
     private ApiUtils() {
     }
 
+    /**
+     * This util inner class contains various methods for parsing api from
+     * <a href="https://www.alphavantage.co/documentation/">
+     * <i>Alpha Vantage</i></a> site
+     */
     public static class AlphaVantageParser {
         // Suppresses default constructor, ensuring non-instantiability.
         private AlphaVantageParser() {
         }
 
+        /**
+         * Get stock price at specified date of specified company
+         *
+         * @param date        the specified date
+         * @param companyName the name of specified company
+         * @return
+         */
         public static StockInfoDaily getStockAtSpecifiedDay(final LocalDate date, final String companyName) {
             final String function = "TIME_SERIES_DAILY";
             final String dataType = "json";
@@ -54,7 +64,7 @@ public class ApiUtils {
                     foundNode = node.findValue(localDate.toString());
                 }
 
-                stockInfo = getPojoStockData(foundNode, StockInfoDaily.class);
+                stockInfo = getPojoData(foundNode, StockInfoDaily.class);
             } catch (IOException e) {
                 stockInfo = null;
                 e.printStackTrace();
@@ -63,7 +73,13 @@ public class ApiUtils {
             return stockInfo;
         }
 
-        public static StockInfo getLatestStock(String companyName) {
+        /**
+         * Get latest stock price of specified company
+         *
+         * @param companyName the name of specified company
+         * @return
+         */
+        public static StockInfo getLatestStock(final String companyName) {
             final String function = "GLOBAL_QUOTE";
             final String datatype = "json";
             StockInfo stockInfo;
@@ -90,7 +106,7 @@ public class ApiUtils {
                     return latestStockInfo;
                 }
 
-                stockInfo = getPojoStockData(node, StockInfo.class);
+                stockInfo = getPojoData(node, StockInfo.class);
                 latestStockInfo = stockInfo;
 
             } catch (IOException e) {
@@ -101,7 +117,13 @@ public class ApiUtils {
             return stockInfo;
         }
 
-        public static CompanyInfo getSymbolFromCompanyName(String companyName) {
+        /**
+         * Get company symbol from company name
+         *
+         * @param companyName the name of company
+         * @return
+         */
+        public static CompanyInfo getSymbolFromCompanyName(final String companyName) {
             final String function = "SYMBOL_SEARCH";
             final String datatype = "json";
             CompanyInfo companyInfo;
@@ -129,8 +151,37 @@ public class ApiUtils {
 
             return companyInfo;
         }
+
+        /**
+         * Method that handles frequency excess of API calls.
+         * Return JsonNode or null if frequency excess happened.
+         *
+         * @param node node to test for frequency excess
+         * @param path path to find in node
+         * @return
+         * @throws IOException
+         */
+        private static JsonNode excessHandler(final JsonNode node, final String path) throws IOException {
+            JsonNode pathedNode = node.path(path);
+
+            if (pathedNode.isMissingNode()) {
+                pathedNode = node.path("Note");
+                if (!pathedNode.isMissingNode()) {
+                    pathedNode = null;
+                } else
+                    throw new IOException("Node doesn't contain StockInfo or Note:frequency excess");
+            }
+            return pathedNode;
+        }
     }
 
+    /**
+     * Get JsonNode from URL
+     *
+     * @param url
+     * @return JsonNode
+     * @throws IOException
+     */
     private static JsonNode getNodeFromUrl(URL url) throws IOException {
         URLConnection connection = url.openConnection();
         String redirect = connection.getHeaderField("Location");
@@ -144,21 +195,17 @@ public class ApiUtils {
         return node;
     }
 
-    private static <T> T getPojoStockData(JsonNode node, Class<T> clazz) throws IOException {
+    /**
+     * Get POJO of class T from JsonNode
+     *
+     * @param node
+     * @param clazz
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
+    private static <T> T getPojoData(JsonNode node, Class<T> clazz) throws IOException {
         return mapper.treeToValue(node, clazz);
-    }
-
-    private static JsonNode excessHandler(final JsonNode node, final String path) throws IOException {
-        JsonNode pathedNode = node.path(path);
-
-        if (pathedNode.isMissingNode()) {
-            pathedNode = node.path("Note");
-            if (!pathedNode.isMissingNode()) {
-                pathedNode = null;
-            } else
-                throw new IOException("Node doesn't contain StockInfo or Note:frequency excess");
-        }
-        return pathedNode;
     }
 
     /**

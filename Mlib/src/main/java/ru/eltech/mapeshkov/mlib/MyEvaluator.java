@@ -8,7 +8,17 @@ import org.apache.spark.sql.Row;
 
 import java.util.Arrays;
 
+/**
+ * Class that evaluates error between label and prediction in specified dataset
+ */
 public class MyEvaluator extends Evaluator {
+    /**
+     * Evaluates error.
+     * If dataset doesn't contain prediction for label, than NaN will be returned
+     *
+     * @param dataset
+     * @return
+     */
     @Override
     public double evaluate(Dataset<?> dataset) {
         Dataset<Row> datasetCopy = dataset.toDF();
@@ -16,22 +26,6 @@ public class MyEvaluator extends Evaluator {
         String[] columns = datasetCopy.columns();
         int labelIndex = Arrays.asList(columns).indexOf("label");
         int predictionIndex = Arrays.asList(columns).indexOf("prediction");
-
-        //double[] accuracyError = {0.0};
-        //final long datasetSize = rowDataset.count();
-
-/*        rowDataset.foreach(row -> {
-            String label = row.mkString(";").split(";")[4];
-            String prediction = row.mkString(";").split(";")[6];
-
-            MyFileWriter.println((Math.abs(
-                    Double.parseDouble(prediction) - Double.parseDouble(label)) / datasetSize));
-
-            accuracyError[0] += (Math.abs(
-                    Double.parseDouble(prediction) - Double.parseDouble(label)) / datasetSize);
-
-            MyFileWriter.println("accuracyError[0]= " + accuracyError[0]);
-        });*/
 
         double error = Double.NaN;
         JavaRDD<Row> filteredDatasetCopy = datasetCopy.toJavaRDD().filter(row -> {
@@ -49,7 +43,7 @@ public class MyEvaluator extends Evaluator {
                 double predictionDouble;
                 predictionDouble = Double.parseDouble(prediction);
 
-                return Math.abs(predictionDouble - labelDouble);
+                return Math.abs(predictionDouble - labelDouble) / labelDouble * 100;
             }).reduce((num1, num2) -> num1 + num2);
 
             error /= datasetCopy.count();
