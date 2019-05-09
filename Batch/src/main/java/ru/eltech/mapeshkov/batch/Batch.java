@@ -21,6 +21,9 @@ import java.util.concurrent.TimeUnit;
  * Class that represents batch-layer in lambda-architecture
  */
 public class Batch {
+
+    private static final String companiesDirectoryPath = "testing batch/allStockDataWithSentimentInitial";
+
     // Suppresses default constructor, ensuring non-instantiability.
     private Batch() {
 
@@ -29,11 +32,9 @@ public class Batch {
     /**
      * Starts batch-layer
      *
-     * @param companiesDirectoryPath
-     * @param isWithSentiment
      * @throws Exception
      */
-    public static void start(final String companiesDirectoryPath, final boolean isWithSentiment) throws Exception {
+    public static void start() throws Exception {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkSession spark = SparkSession
@@ -71,7 +72,7 @@ public class Batch {
                         }
                         countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
 
-                        batchCalculate(spark, companyDirPath, companiesDirectoryPath, isWithSentiment);
+                        batchCalculate(spark, companyDirPath);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -79,9 +80,9 @@ public class Batch {
         //}
     }
 
-    private static void batchCalculate(SparkSession spark, Path companyDirPath, String companiesDirPath, boolean isWithSentiment) throws Exception {
+    private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirectoryPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
         final int windowWidth = Schemes.SCHEMA_WINDOWED.getWindowWidth();
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
@@ -116,13 +117,10 @@ public class Batch {
         //Model<?> trainedModel = PredictionUtils.trainModel(trainingDatasetNotLabeled, logWriter);
 
         Model<?> trainedModel;
-        if (isWithSentiment)
-            trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
-        else
-            trainedModel = PredictionUtils.trainSlidingWindowWithoutSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
+        trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
 
         if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save(companiesDirPath + "\\models\\" + companyDirPath.getFileName());
+            ((PipelineModel) trainedModel).write().overwrite().save(Batch.companiesDirectoryPath + "\\models\\" + companyDirPath.getFileName());
         }
 
         logWriter.close();

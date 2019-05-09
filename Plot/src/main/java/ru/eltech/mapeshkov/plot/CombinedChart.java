@@ -194,8 +194,4 @@ public class CombinedChart extends ApplicationFrame {
             e.printStackTrace();
         }
     }
-
-    private static class LabeledXYDataset extends AbstractDataset {
-
-    }
 }
