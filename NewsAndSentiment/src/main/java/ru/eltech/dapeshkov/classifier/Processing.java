@@ -2,13 +2,14 @@ package ru.eltech.dapeshkov.classifier;
 
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.nio.file.Files.newBufferedWriter;
 
 /**
  * class for sentiment analysis
@@ -27,7 +28,7 @@ public class Processing {
     //ngram count of words in feature vector
     private static int n;
     //sentiment
-    static final private String[] category = {"positive", "negative", "neutral" };
+    static final private String[] category = {"positive", "negative", "neutral"};
 
     //stopwords into hash
     static {
@@ -85,7 +86,7 @@ public class Processing {
      * converts {@link String} to lower case, removes all words present in stoplist, removes duplicates, collects to feature vector
      *
      * @param str {@link String} to parse
-     * @param n number of words in feature vector element
+     * @param n   number of words in feature vector element
      * @return the {@link String[]} representing feature vector
      */
     private static String[] parse(final String str, final int n) {
@@ -99,8 +100,9 @@ public class Processing {
 
     /**
      * converts array of {@link String} into feature vector (bag of words)
+     *
      * @param arr array of words to convert to feature vector
-     * @param n number of words in feature vector element
+     * @param n   number of words in feature vector element
      * @return {@link String[]} representing feature vector
      */
     private static String[] ngram(final String[] arr, final int n) {
@@ -117,6 +119,7 @@ public class Processing {
 
     /**
      * trains the model
+     *
      * @param n number of words in feature vector element
      */
     static public void train(final int n) {
@@ -126,7 +129,7 @@ public class Processing {
         JSONProcessor.Train[] arr = null;
 
         //reads train data
-        try (InputStream in = Processing.class.getResourceAsStream("train.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -143,18 +146,15 @@ public class Processing {
                 prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
             }
         });
-
-        //TODO train accuracy
-        /*Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
+        Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
         entryComparator = entryComparator.reversed();
-
-        Map<Pair, Double> negative = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("negative")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Pair, Double> neutral = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("neutral")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Pair, Double> positive = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("positive")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Pair, Double> negative = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("negative")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
+        Map<Pair, Double> neutral = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("neutral")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
+        Map<Pair, Double> positive = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("positive")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
         likelihood.clear();
         likelihood.putAll(negative);
         likelihood.putAll(neutral);
-        likelihood.putAll(positive);*/
+        likelihood.putAll(positive);
     }
 
     //method to colculate the likelihood of the text to givven sentiment
@@ -170,6 +170,7 @@ public class Processing {
 
     /**
      * computes teh sentiment for text
+     *
      * @param str text
      * @return sentiment
      */
@@ -184,15 +185,16 @@ public class Processing {
                 .get();
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         train(1);
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/final/test1_2.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train2.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         int i = 0;
         for (JSONProcessor.Train a : arr) {
             String sentiment = sentiment(a.getText());
