@@ -146,15 +146,6 @@ public class Processing {
         long vocabulary = likelihood.keySet().stream().map(s -> s.word).distinct().count();
         Map<String, Double> counts = likelihood.entrySet().stream().collect(Collectors.groupingBy(s -> s.getKey().category, Collectors.summingDouble(Map.Entry::getValue)));
         likelihood.replaceAll((k, v) -> Math.log((v + 1) / (counts.get(k.category) + vocabulary)));
-        /*Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
-        entryComparator = entryComparator.reversed();
-        Map<Pair, Double> negative = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("negative")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
-        Map<Pair, Double> neutral = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("neutral")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
-        Map<Pair, Double> positive = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("positive")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
-        likelihood.clear();
-        likelihood.putAll(negative);
-        likelihood.putAll(neutral);
-        likelihood.putAll(positive);*/
     }
 
     //method to colculate the likelihood of the text to givven sentiment
