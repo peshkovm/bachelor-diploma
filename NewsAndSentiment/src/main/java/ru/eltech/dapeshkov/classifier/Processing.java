@@ -3,8 +3,6 @@ package ru.eltech.dapeshkov.classifier;
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
 import java.io.*;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,12 +17,10 @@ public class Processing {
 
     //mapping (word,sentiment) to count, each word (or several words) gets mapped for later use in sentiment method
     private static final HashMap<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
-    //mapping sentiment to ount of documents with given sentiment
+    //mapping sentiment to count with given sentiment
     private static final HashMap<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
     //stopwords
     private static final Set<String> hash = new HashSet<>();
-    //count of documents
-    private static int count = 0;
     //ngram count of words in feature vector
     private static int n;
     //sentiment
@@ -136,7 +132,7 @@ public class Processing {
         }
 
         //number of documents
-        count = Objects.requireNonNull(arr).length;
+        int count_of_documents = Objects.requireNonNull(arr).length;
 
         //trains the model
         Arrays.stream(arr).unordered().forEach(i -> {
@@ -146,7 +142,11 @@ public class Processing {
                 prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
             }
         });
-        Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
+        prior_probability.replaceAll((k, v) -> Math.log(v / count_of_documents));
+        long vocabulary = likelihood.keySet().stream().map(s -> s.word).distinct().count();
+        Map<String, Double> counts = likelihood.entrySet().stream().collect(Collectors.groupingBy(s -> s.getKey().category, Collectors.summingDouble(Map.Entry::getValue)));
+        likelihood.replaceAll((k, v) -> Math.log((v + 1) / (counts.get(k.category) + vocabulary)));
+        /*Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
         entryComparator = entryComparator.reversed();
         Map<Pair, Double> negative = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("negative")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
         Map<Pair, Double> neutral = likelihood.entrySet().stream().sorted(entryComparator).filter(s -> s.getKey().category.equals("neutral")).limit(5000).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
@@ -154,17 +154,18 @@ public class Processing {
         likelihood.clear();
         likelihood.putAll(negative);
         likelihood.putAll(neutral);
-        likelihood.putAll(positive);
+        likelihood.putAll(positive);*/
     }
 
     //method to colculate the likelihood of the text to givven sentiment
     private static Double classify_cat(final String str, final String... arr) {
         //log is used to not multiply small close to 0 numbers, instead sum is used
         //laplacian smooth is used
-        return Math.log(prior_probability.get(str) / count) +
-                Arrays.stream(arr).unordered()
-                        .mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, str), 0d) + 1) / (prior_probability.get(str) + likelihood.size()))
-                        .reduce(0, (left, right) -> left + Math.log(right));
+        Double s = prior_probability.get(str) +
+                Arrays.stream(arr).unordered().filter(value -> likelihood.containsKey(new Pair(value, str)))
+                        .mapToDouble(value -> (likelihood.get(new Pair(value, str))))
+                        .sum();
+        return s;
     }
 
 
