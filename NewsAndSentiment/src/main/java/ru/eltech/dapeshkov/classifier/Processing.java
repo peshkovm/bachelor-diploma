@@ -137,9 +137,9 @@ public class Processing<T, K> {
         //log is used to not multiply small close to 0 numbers, instead sum is used
         //laplacian smooth is used
         //multinomial
-        Double s = (prior_probability.get(category) / (double) countOfDocuments) *
-                vector.stream().unordered().mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, category), 0) + 1) / (double) (counts.get(category) + vocabulary.size()))
-                        .reduce(1, (a, b) -> a * b);
+        Double s = Math.log(prior_probability.get(category) / (double) countOfDocuments) +
+                vector.stream().unordered().mapToDouble(value -> Math.log((likelihood.getOrDefault(new Pair(value, category), 0) + 1) / (double) (counts.get(category) + vocabulary.size())))
+                        .sum();
         return s;
     }
 
@@ -160,7 +160,7 @@ public class Processing<T, K> {
         JSONProcessor.Train[] arr = null;
         Processing<String, String> processing = new Processing<>();
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train11.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -170,7 +170,7 @@ public class Processing<T, K> {
             processing.train(a.getSentiment(), Arrays.asList(Processing.parse(a.getText(), 1)));
         }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train22.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train2.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
