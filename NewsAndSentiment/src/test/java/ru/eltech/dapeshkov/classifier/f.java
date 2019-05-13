@@ -23,8 +23,8 @@ public class f {
             e.printStackTrace();
         }
         JSONProcessor.Train[] train = Arrays.copyOfRange(arr, 0, 4890);
-        JSONProcessor.Train[] test = Arrays.copyOfRange(arr,4890,7290);
-        JSONProcessor.Train[] neg = Arrays.stream(train).filter(s -> s.getSentiment().equals("negative")).limit(800).collect(Collectors.toMap(s -> s.));
+        JSONProcessor.Train[] test = Arrays.copyOfRange(arr, 4890, 7290);
+        JSONProcessor.Train[] neg = Arrays.stream(train).filter(s -> s.getSentiment().equals("negative")).limit(800).toArray(JSONProcessor.Train[]::new);
         JSONProcessor.Train[] pos = Arrays.stream(train).filter(s -> s.getSentiment().equals("positive")).limit(800).toArray(JSONProcessor.Train[]::new);
         JSONProcessor.Train[] neu = Arrays.stream(train).filter(s -> s.getSentiment().equals("neutral")).limit(800).toArray(JSONProcessor.Train[]::new);
         JSONProcessor.Train[] trains = Stream.concat(Arrays.stream(neg), Stream.concat(Arrays.stream(pos), Arrays.stream(neu))).toArray(JSONProcessor.Train[]::new);
@@ -34,7 +34,7 @@ public class f {
         bufferedWriter.write(write);
         bufferedWriter.close();
         write = JSONProcessor.write(test);
-        bufferedWriter = newBufferedWriter(Paths.get("test.json"),StandardOpenOption.CREATE);
+        bufferedWriter = newBufferedWriter(Paths.get("test.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }
