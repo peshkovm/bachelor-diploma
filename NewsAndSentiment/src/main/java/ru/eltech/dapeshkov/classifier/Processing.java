@@ -13,18 +13,21 @@ import static java.nio.file.Files.newBufferedWriter;
  * class for sentiment analysis
  */
 
-public class Processing {
+public class Processing<T, K> {
 
     //mapping (word,sentiment) to count, each word (or several words) gets mapped for later use in sentiment method
-    private static final HashMap<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
+    private final HashMap<Pair, Integer> likelihood = new HashMap<>(); //concurency not needed final field safe published
     //mapping sentiment to count with given sentiment
-    private static final HashMap<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
+    private final HashMap<T, Integer> prior_probability = new HashMap<>(); //concurency not needed final field safe published
     //stopwords
     private static final Set<String> hash = new HashSet<>();
     //ngram count of words in feature vector
     private static int n;
     //sentiment
-    static final private String[] category = {"positive", "negative", "neutral"};
+    final private Set<T> category = new HashSet<>();
+    private int countOfDocuments = 0;
+    final private Set<K> vocabulary = new HashSet<>();
+    final private Map<T, Integer> counts = new HashMap<>();
 
     //stopwords into hash
     static {
@@ -38,43 +41,40 @@ public class Processing {
     }
 
     //(word,sentiment)
-    private static class Pair {
-        final String word;
-        final String category;
+    private class Pair {
+        final K word;
+        final T category;
 
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final Pair pair = (Pair) o;
-            return Objects.equals(getWord(), pair.getWord()) &&
-                    Objects.equals(getCategory(), pair.getCategory());
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(getWord(), getCategory());
-        }
-
-        Pair(final String word, final String category) {
+        public Pair(K word, T category) {
             this.word = word;
             this.category = category;
         }
 
-        private String getWord() {
+        public K getWord() {
             return word;
         }
 
         @Override
-        public String toString() {
-            return "Pair{" +
-                    "word='" + word + '\'' +
-                    ", category='" + category + '\'' +
-                    '}';
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pair pair = (Pair) o;
+            return word.equals(pair.word) &&
+                    category.equals(pair.category);
         }
 
-        private String getCategory() {
+        @Override
+        public int hashCode() {
+            return Objects.hash(word, category);
+        }
+
+        public T getCategory() {
             return category;
+        }
+
+        @Override
+        public String toString() {
+            return word + " " + category;
         }
     }
 
@@ -85,10 +85,10 @@ public class Processing {
      * @param n   number of words in feature vector element
      * @return the {@link String[]} representing feature vector
      */
-    private static String[] parse(final String str, final int n) {
+    static String[] parse(final String str, final int n) {
         String[] res = str.toLowerCase().split("[^\\p{L}]+");
         if (res.length < n) return null;
-        res = Arrays.stream(res).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
+        res = Arrays.stream(res).filter(t -> !hash.contains(t)).toArray(String[]::new);
         res = ngram(res, n);
 
         return res;
@@ -118,44 +118,28 @@ public class Processing {
      *
      * @param n number of words in feature vector element
      */
-    static public void train(final int n) {
-
-        Processing.n = n;
-
-        JSONProcessor.Train[] arr = null;
-
-        //reads train data
-        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
-            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    public void train(T category, Collection<K> vector) {
+        this.category.add(category);
         //number of documents
-        int count_of_documents = Objects.requireNonNull(arr).length;
+        countOfDocuments++;
 
         //trains the model
-        Arrays.stream(arr).unordered().forEach(i -> {
-            final String[] strings = parse(i.getText(), Processing.n);
-            if (strings != null) {
-                Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
-                prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
-            }
+        vector.stream().unordered().forEach(i -> {
+            likelihood.compute(new Pair(i, category), (k, v) -> (v == null) ? 1 : v + 1);
+            vocabulary.add(i);
+            counts.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
         });
-        prior_probability.replaceAll((k, v) -> Math.log(v / count_of_documents));
-        long vocabulary = likelihood.keySet().stream().map(s -> s.word).distinct().count();
-        Map<String, Double> counts = likelihood.entrySet().stream().collect(Collectors.groupingBy(s -> s.getKey().category, Collectors.summingDouble(Map.Entry::getValue)));
-        likelihood.replaceAll((k, v) -> Math.log((v + 1) / (counts.get(k.category) + vocabulary)));
+        prior_probability.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
     }
 
     //method to colculate the likelihood of the text to givven sentiment
-    private static Double classify_cat(final String str, final String... arr) {
+    private Double classify_cat(final T category, final Collection<K> vector) {
         //log is used to not multiply small close to 0 numbers, instead sum is used
         //laplacian smooth is used
-        Double s = prior_probability.get(str) +
-                Arrays.stream(arr).unordered().filter(value -> likelihood.containsKey(new Pair(value, str)))
-                        .mapToDouble(value -> (likelihood.get(new Pair(value, str))))
-                        .sum();
+        //multinomial
+        Double s = (prior_probability.get(category) / (double) countOfDocuments) *
+                vector.stream().unordered().mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, category), 0) + 1) / (double) (counts.get(category) + vocabulary.size()))
+                        .reduce(1, (a, b) -> a * b);
         return s;
     }
 
@@ -166,30 +150,36 @@ public class Processing {
      * @param str text
      * @return sentiment
      */
-    static public String sentiment(final String str) {
-        final String[] arr = parse(str, Processing.n);
-        if (arr == null) {
-            return null;
-        }
-
-        return Arrays.stream(category).unordered()
-                .max(Comparator.comparingDouble(o -> classify_cat(o, arr)))
-                .get();
+    public T sentiment(Collection<K> vector) {
+        Map<T, Double> collect = this.category.stream().unordered().collect(Collectors.toMap((T s) -> s, (T o) -> classify_cat(o, vector)));
+        System.out.println(collect);
+        return collect.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
     public static void main(final String[] args) throws IOException {
-        train(1);
         JSONProcessor.Train[] arr = null;
+        Processing<String, String> processing = new Processing<>();
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train2.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train11.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (JSONProcessor.Train a : arr) {
+            processing.train(a.getSentiment(), Arrays.asList(Processing.parse(a.getText(), 1)));
+        }
+
+        try (InputStream in = Processing.class.getResourceAsStream("/train22.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         int i = 0;
+
         for (JSONProcessor.Train a : arr) {
-            String sentiment = sentiment(a.getText());
+            String sentiment = processing.sentiment(Arrays.asList(Processing.parse(a.getText(), 1)));
             if (sentiment == null) {
                 continue;
             }
