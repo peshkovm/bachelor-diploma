@@ -156,21 +156,35 @@ public class Processing<T, K> {
         return collect.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
+    public void reduce(int number) {
+        Comparator<Map.Entry<Pair, Integer>> entryComparator = Comparator.comparing(Map.Entry::getValue);
+        entryComparator = entryComparator.reversed();
+        Map<Pair, Integer> collect = likelihood.entrySet().stream().sorted(entryComparator).limit(number).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
+        likelihood.clear();
+        likelihood.putAll(collect);
+        vocabulary.clear();
+        vocabulary.addAll(likelihood.keySet().stream().map(s -> s.word).distinct().collect(Collectors.toList()));
+        counts.clear();
+    }
+
     public static void main(final String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
         Processing<String, String> processing = new Processing<>();
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (JSONProcessor.Train a : arr) {
-            processing.train(a.getSentiment(), Arrays.asList(Processing.parse(a.getText(), 1)));
+            String[] str = Processing.parse(a.getText(), 1);
+            if (str != null) {
+                processing.train(a.getSentiment(), Arrays.asList(str));
+            }
         }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train2.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/test.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -179,7 +193,11 @@ public class Processing<T, K> {
         int i = 0;
 
         for (JSONProcessor.Train a : arr) {
-            String sentiment = processing.sentiment(Arrays.asList(Processing.parse(a.getText(), 1)));
+            String[] str = Processing.parse(a.getText(), 1);
+            String sentiment = null;
+            if (str != null) {
+                sentiment = processing.sentiment(Arrays.asList(str));
+            }
             if (sentiment == null) {
                 continue;
             }
