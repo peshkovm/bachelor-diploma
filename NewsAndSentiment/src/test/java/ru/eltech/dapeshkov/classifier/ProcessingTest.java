@@ -43,24 +43,17 @@ public class ProcessingTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         JSONProcessor.Train[] arr = null;
+        arr = JSONProcessor.parse(ProcessingTest.class.getResourceAsStream("/train (1).json"), JSONProcessor.Train[].class);
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
-            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        JSONProcessor.Train[] trains = Arrays.copyOfRange(arr, 5000, 8000);
-        ProcessingTest.arr = trains;
-        String[] str = new String[trains.length];
+        String[] str = new String[arr.length];
         int a = 0;
-        for (JSONProcessor.Train i : trains) {
+        for (JSONProcessor.Train i : arr) {
             str[a++] = i.getText();
         }
         get_news(str);
         lemmatizer();
         //sentiment();
-        json(trains);
+        json(arr);
     }
 
     public static void lemmatizer() throws IOException, InterruptedException {
@@ -120,7 +113,7 @@ public class ProcessingTest {
     }
 
     public static void json(JSONProcessor.Train[] arr) throws IOException {
-        final int[] i = {0};
+        int[] i = {0};
         try (Stream<String> news_lem_parsed = Files.lines(Paths.get("news_lem_parsed.csv"))) {
             news_lem_parsed.forEach(s -> {
                 arr[i[0]++].setText(s);

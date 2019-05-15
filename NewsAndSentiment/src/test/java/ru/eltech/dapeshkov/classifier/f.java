@@ -17,7 +17,7 @@ public class f {
     public static void main(String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train (1).json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train111.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -30,11 +30,11 @@ public class f {
         JSONProcessor.Train[] trains = Stream.concat(Arrays.stream(neg), Stream.concat(Arrays.stream(pos), Arrays.stream(neu))).toArray(JSONProcessor.Train[]::new);
 
         String write = JSONProcessor.write(trains);
-        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train.json"), StandardOpenOption.CREATE);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train11.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
         write = JSONProcessor.write(test);
-        bufferedWriter = newBufferedWriter(Paths.get("test.json"), StandardOpenOption.CREATE);
+        bufferedWriter = newBufferedWriter(Paths.get("test11.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }
