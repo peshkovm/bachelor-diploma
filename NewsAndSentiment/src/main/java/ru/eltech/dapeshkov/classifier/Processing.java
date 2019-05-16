@@ -36,8 +36,7 @@ public class Processing<T, K> {
         }
     }
 
-    private Processing() {
-
+    public Processing() {
     }
 
     //(word,sentiment)
@@ -173,10 +172,12 @@ public class Processing<T, K> {
 
         try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-            arr = Arrays.copyOfRange(arr, 0, arr.length - 1000);
+            arr = Arrays.copyOfRange(arr, 0, arr.length - 3000);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        System.out.println(arr[arr.length-1]);
 
         for (JSONProcessor.Train a : arr) {
             String[] str = Processing.parse(a.getText(), 1);
@@ -187,7 +188,7 @@ public class Processing<T, K> {
 
         try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-            arr = Arrays.copyOfRange(arr, arr.length - 1000, arr.length);
+            arr = Arrays.copyOfRange(arr, arr.length - 3000, arr.length);
         } catch (IOException e) {
             e.printStackTrace();
         }

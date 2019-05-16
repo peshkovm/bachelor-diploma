@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.newBufferedWriter;
@@ -51,12 +52,12 @@ public class ProcessingTest {
             str[a++] = i.getText();
         }
         get_news(str);
-        lemmatizer();
+        lemmatizer(arr);
         //sentiment();
         json(arr);
     }
 
-    public static void lemmatizer() throws IOException, InterruptedException {
+    public static void lemmatizer(JSONProcessor.Train[] a) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder("./mystem", "-cld", "news.csv", "news_lem.csv");
         Process start = processBuilder.start();
         start.waitFor();
@@ -72,6 +73,33 @@ public class ProcessingTest {
             });
         }
         bufferedWriter.close();
+        Map<String, String> collect;
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/emo_dict.csv"))).lines()) {
+            collect = lines.collect(Collectors.toMap(s -> s.split(";")[0], s -> s.split(";")[1]));
+        }
+        BufferedWriter bufferedWriter1 = newBufferedWriter(Paths.get("news_lem_parsed_sent.csv"), StandardOpenOption.CREATE);
+        final int[] i = {0};
+        try (Stream<String> lines = Files.lines(Paths.get("news_lem_parsed.csv"))) {
+            lines.forEach(s -> {
+                String[] s1 = s.split(" ");
+                for (String x : s1) {
+                    if (a[i[0]].getSentiment().equals(collect.get(x))) {
+                        try {
+                            bufferedWriter1.write(x + " ");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                try {
+                    bufferedWriter1.newLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                i[0]++;
+            });
+        }
+        bufferedWriter1.close();
     }
 
     public static void sentiment() throws IOException {
@@ -114,7 +142,7 @@ public class ProcessingTest {
 
     public static void json(JSONProcessor.Train[] arr) throws IOException {
         int[] i = {0};
-        try (Stream<String> news_lem_parsed = Files.lines(Paths.get("news_lem_parsed.csv"))) {
+        try (Stream<String> news_lem_parsed = Files.lines(Paths.get("news_lem_parsed_sent.csv"))) {
             news_lem_parsed.forEach(s -> {
                 arr[i[0]++].setText(s);
             });
