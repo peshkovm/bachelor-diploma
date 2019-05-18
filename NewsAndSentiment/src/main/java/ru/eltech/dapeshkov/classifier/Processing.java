@@ -2,32 +2,32 @@ package ru.eltech.dapeshkov.classifier;
 
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.nio.file.Files.newBufferedWriter;
 
 /**
  * class for sentiment analysis
  */
 
-public class Processing {
+public class Processing<T, K> {
 
     //mapping (word,sentiment) to count, each word (or several words) gets mapped for later use in sentiment method
-    private static final HashMap<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
-    //mapping sentiment to ount of documents with given sentiment
-    private static final HashMap<String, Double> prior_probability = new HashMap<>(); //concurency not needed final field safe published
+    private final HashMap<Pair, Integer> likelihood = new HashMap<>(); //concurency not needed final field safe published
+    //mapping sentiment to count with given sentiment
+    private final HashMap<T, Integer> prior_probability = new HashMap<>(); //concurency not needed final field safe published
     //stopwords
     private static final Set<String> hash = new HashSet<>();
-    //count of documents
-    private static int count = 0;
     //ngram count of words in feature vector
     private static int n;
     //sentiment
-    static final private String[] category = {"positive", "negative", "neutral" };
+    final private Set<T> category = new HashSet<>();
+    private int countOfDocuments = 0;
+    final private Set<K> vocabulary = new HashSet<>();
+    final private Map<T, Integer> counts = new HashMap<>();
 
     //stopwords into hash
     static {
@@ -36,48 +36,44 @@ public class Processing {
         }
     }
 
-    private Processing() {
-
+    public Processing() {
     }
 
     //(word,sentiment)
-    private static class Pair {
-        final String word;
-        final String category;
+    private class Pair {
+        final K word;
+        final T category;
 
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final Pair pair = (Pair) o;
-            return Objects.equals(getWord(), pair.getWord()) &&
-                    Objects.equals(getCategory(), pair.getCategory());
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(getWord(), getCategory());
-        }
-
-        Pair(final String word, final String category) {
+        public Pair(K word, T category) {
             this.word = word;
             this.category = category;
         }
 
-        private String getWord() {
+        public K getWord() {
             return word;
         }
 
         @Override
-        public String toString() {
-            return "Pair{" +
-                    "word='" + word + '\'' +
-                    ", category='" + category + '\'' +
-                    '}';
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pair pair = (Pair) o;
+            return word.equals(pair.word) &&
+                    category.equals(pair.category);
         }
 
-        private String getCategory() {
+        @Override
+        public int hashCode() {
+            return Objects.hash(word, category);
+        }
+
+        public T getCategory() {
             return category;
+        }
+
+        @Override
+        public String toString() {
+            return word + " " + category;
         }
     }
 
@@ -85,13 +81,13 @@ public class Processing {
      * converts {@link String} to lower case, removes all words present in stoplist, removes duplicates, collects to feature vector
      *
      * @param str {@link String} to parse
-     * @param n number of words in feature vector element
+     * @param n   number of words in feature vector element
      * @return the {@link String[]} representing feature vector
      */
-    private static String[] parse(final String str, final int n) {
+    static String[] parse(final String str, final int n) {
         String[] res = str.toLowerCase().split("[^\\p{L}]+");
         if (res.length < n) return null;
-        res = Arrays.stream(res).filter(t -> !hash.contains(t)).distinct().toArray(String[]::new);
+        res = Arrays.stream(res).filter(t -> !hash.contains(t)).toArray(String[]::new);
         res = ngram(res, n);
 
         return res;
@@ -99,8 +95,9 @@ public class Processing {
 
     /**
      * converts array of {@link String} into feature vector (bag of words)
+     *
      * @param arr array of words to convert to feature vector
-     * @param n number of words in feature vector element
+     * @param n   number of words in feature vector element
      * @return {@link String[]} representing feature vector
      */
     private static String[] ngram(final String[] arr, final int n) {
@@ -117,85 +114,89 @@ public class Processing {
 
     /**
      * trains the model
+     *
      * @param n number of words in feature vector element
      */
-    static public void train(final int n) {
-
-        Processing.n = n;
-
-        JSONProcessor.Train[] arr = null;
-
-        //reads train data
-        try (InputStream in = Processing.class.getResourceAsStream("train.json")) {
-            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    public void train(T category, Collection<K> vector) {
+        this.category.add(category);
         //number of documents
-        count = Objects.requireNonNull(arr).length;
+        countOfDocuments++;
 
         //trains the model
-        Arrays.stream(arr).unordered().forEach(i -> {
-            final String[] strings = parse(i.getText(), Processing.n);
-            if (strings != null) {
-                Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
-                prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
-            }
+        vector.stream().unordered().forEach(i -> {
+            likelihood.compute(new Pair(i, category), (k, v) -> (v == null) ? 1 : v + 1);
+            vocabulary.add(i);
+            counts.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
         });
-
-        //TODO train accuracy
-        /*Comparator<Map.Entry<Pair, Double>> entryComparator = Comparator.comparing(Map.Entry::getValue);
-        entryComparator = entryComparator.reversed();
-
-        Map<Pair, Double> negative = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("negative")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Pair, Double> neutral = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("neutral")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Pair, Double> positive = likelihood.entrySet().stream().filter(e -> e.getKey().category.equals("positive")).sorted(entryComparator).limit(4000).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        likelihood.clear();
-        likelihood.putAll(negative);
-        likelihood.putAll(neutral);
-        likelihood.putAll(positive);*/
+        prior_probability.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
     }
 
     //method to colculate the likelihood of the text to givven sentiment
-    private static Double classify_cat(final String str, final String... arr) {
+    private Double classify_cat(final T category, final Collection<K> vector) {
         //log is used to not multiply small close to 0 numbers, instead sum is used
         //laplacian smooth is used
-        return Math.log(prior_probability.get(str) / count) +
-                Arrays.stream(arr).unordered()
-                        .mapToDouble(value -> (likelihood.getOrDefault(new Pair(value, str), 0d) + 1) / (prior_probability.get(str) + likelihood.size()))
-                        .reduce(0, (left, right) -> left + Math.log(right));
+        //multinomial
+        Double s = Math.log(prior_probability.get(category) / (double) countOfDocuments) +
+                vector.stream().unordered().mapToDouble(value -> Math.log((likelihood.getOrDefault(new Pair(value, category), 0) + 1) / (double) (counts.get(category) + vocabulary.size())))
+                        .sum();
+        return s;
     }
 
 
     /**
      * computes teh sentiment for text
+     *
      * @param str text
      * @return sentiment
      */
-    static public String sentiment(final String str) {
-        final String[] arr = parse(str, Processing.n);
-        if (arr == null) {
-            return null;
-        }
-
-        return Arrays.stream(category).unordered()
-                .max(Comparator.comparingDouble(o -> classify_cat(o, arr)))
-                .get();
+    public T sentiment(Collection<K> vector) {
+        Map<T, Double> collect = this.category.stream().unordered().collect(Collectors.toMap((T s) -> s, (T o) -> classify_cat(o, vector)));
+        System.out.println(collect);
+        return collect.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
-    public static void main(final String[] args) {
-        train(1);
-        JSONProcessor.Train[] arr = null;
+    public void reduce(int number) {
+        Comparator<Map.Entry<Pair, Integer>> entryComparator = Comparator.comparing(Map.Entry::getValue);
+        entryComparator = entryComparator.reversed();
+        Map<Pair, Integer> collect = likelihood.entrySet().stream().sorted(entryComparator).limit(number).collect(Collectors.toMap(s -> s.getKey(), s -> s.getValue()));
+        likelihood.clear();
+        likelihood.putAll(collect);
+        vocabulary.clear();
+        vocabulary.addAll(likelihood.keySet().stream().map(s -> s.word).distinct().collect(Collectors.toList()));
+        counts.clear();
+    }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/final/test1_2.json")) {
+    public static void main(final String[] args) throws IOException {
+        JSONProcessor.Train[] arr = null;
+        Processing<String, String> processing = new Processing<>();
+
+        try (InputStream in = Processing.class.getResourceAsStream("/train111.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        int i = 0;
+
         for (JSONProcessor.Train a : arr) {
-            String sentiment = sentiment(a.getText());
+            String[] str = Processing.parse(a.getText(), 1);
+            if (str != null) {
+                processing.train(a.getSentiment(), Arrays.asList(str));
+            }
+        }
+
+        try (InputStream in = Processing.class.getResourceAsStream("/test111.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        int i = 0;
+
+        for (JSONProcessor.Train a : arr) {
+            String[] str = Processing.parse(a.getText(), 1);
+            String sentiment = null;
+            if (str != null) {
+                sentiment = processing.sentiment(Arrays.asList(str));
+            }
             if (sentiment == null) {
                 continue;
             }
