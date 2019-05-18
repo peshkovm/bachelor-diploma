@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Batch {
 
-    private static final String companiesDirectoryPath = "testing batch/allStockDataWithSentimentInitial";
+    private static final String mainDirectoryPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch";
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Batch() {
@@ -49,7 +49,7 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = companiesDirectoryPath + "\\testing batch in files for prediction";
+        String companiesDirPath = mainDirectoryPath + "\\allStockDataWithSentimentInitial";
 
         HashMap<String, Long> countOfFilesMap = new HashMap<>();
 
@@ -82,7 +82,8 @@ public class Batch {
 
     private static void batchCalculate(SparkSession spark, Path companyDirPath) throws Exception {
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirectoryPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get(mainDirectoryPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
+        Schemes.SCHEMA_WINDOWED.setWindowWidth(3);
         final int windowWidth = Schemes.SCHEMA_WINDOWED.getWindowWidth();
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
@@ -120,7 +121,7 @@ public class Batch {
         trainedModel = PredictionUtils.trainSlidingWindowWithSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
 
         if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save(Batch.companiesDirectoryPath + "\\models\\" + companyDirPath.getFileName());
+            ((PipelineModel) trainedModel).write().overwrite().save(Batch.mainDirectoryPath + "\\models\\" + companyDirPath.getFileName());
         }
 
         logWriter.close();
