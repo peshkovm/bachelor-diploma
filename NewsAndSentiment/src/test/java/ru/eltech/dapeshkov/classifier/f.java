@@ -17,24 +17,20 @@ public class f {
     public static void main(String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train111.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        JSONProcessor.Train[] train = Arrays.copyOfRange(arr, 0, 4890);
-        JSONProcessor.Train[] test = Arrays.copyOfRange(arr, 4890, 7290);
-        JSONProcessor.Train[] neg = Arrays.stream(train).filter(s -> s.getSentiment().equals("negative")).limit(800).toArray(JSONProcessor.Train[]::new);
-        JSONProcessor.Train[] pos = Arrays.stream(train).filter(s -> s.getSentiment().equals("positive")).limit(800).toArray(JSONProcessor.Train[]::new);
-        JSONProcessor.Train[] neu = Arrays.stream(train).filter(s -> s.getSentiment().equals("neutral")).limit(800).toArray(JSONProcessor.Train[]::new);
-        JSONProcessor.Train[] trains = Stream.concat(Arrays.stream(neg), Stream.concat(Arrays.stream(pos), Arrays.stream(neu))).toArray(JSONProcessor.Train[]::new);
+        JSONProcessor.Train[] train = Arrays.copyOfRange(arr, 0, (int) (arr.length * 0.5));
+        JSONProcessor.Train[] test = Arrays.copyOfRange(arr, (int) (arr.length * 0.5), arr.length);
 
-        String write = JSONProcessor.write(trains);
-        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train11.json"), StandardOpenOption.CREATE);
+        String write = JSONProcessor.write(train);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train111.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
         write = JSONProcessor.write(test);
-        bufferedWriter = newBufferedWriter(Paths.get("test11.json"), StandardOpenOption.CREATE);
+        bufferedWriter = newBufferedWriter(Paths.get("test111.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }

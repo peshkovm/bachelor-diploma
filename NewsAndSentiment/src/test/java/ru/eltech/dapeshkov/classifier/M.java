@@ -3,15 +3,12 @@ package ru.eltech.dapeshkov.classifier;
 import ru.eltech.dapeshkov.news.Connection;
 import ru.eltech.dapeshkov.news.Item;
 import ru.eltech.dapeshkov.news.JSONProcessor;
-import ru.eltech.mapeshkov.stock.ApiUtils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;

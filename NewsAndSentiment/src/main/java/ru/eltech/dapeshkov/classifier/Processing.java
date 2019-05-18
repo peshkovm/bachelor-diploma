@@ -170,14 +170,11 @@ public class Processing<T, K> {
         JSONProcessor.Train[] arr = null;
         Processing<String, String> processing = new Processing<>();
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train111.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-            arr = Arrays.copyOfRange(arr, 0, arr.length - 3000);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        System.out.println(arr[arr.length-1]);
 
         for (JSONProcessor.Train a : arr) {
             String[] str = Processing.parse(a.getText(), 1);
@@ -186,9 +183,8 @@ public class Processing<T, K> {
             }
         }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/test111.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
-            arr = Arrays.copyOfRange(arr, arr.length - 3000, arr.length);
         } catch (IOException e) {
             e.printStackTrace();
         }
