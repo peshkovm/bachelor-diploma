@@ -52,9 +52,9 @@ public class Connection implements AutoCloseable {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 lastModified = connection.getLastModified();
                 in = connection.getInputStream();
+                connection.getInputStream();
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return in;
     }
