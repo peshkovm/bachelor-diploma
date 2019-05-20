@@ -177,7 +177,7 @@ public class PredictionUtils {
         //lr
         ParamMap[] paramGrid = new ParamGridBuilder()
                 .addGrid(lr.maxIter(), new int[]{10, 100, 1000})
-                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.00001, 0.3, 0.5, 0.8, 1})
+                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.00001, 0.3, 0.5, 0.8, 1, 3, 5, 10})
                 .addGrid(lr.elasticNetParam(), new double[]{0, 0.3, 0.5, 0.8, 1})
                 .build();
 
@@ -196,8 +196,8 @@ public class PredictionUtils {
         CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
         Model<?> bestModel = crossValidatorModel.bestModel();
 
-/*        Option<Object> bestModelRegParam = bestModel.get(lr.regParam());
-        logWriter.println(bestModelRegParam.get());*/
+        LinearRegressionModel lrModelFromBestModel = (LinearRegressionModel) (((PipelineModel) bestModel).stages()[pipelineStages.length - 1]);
+        logWriter.println("Coefficients: " + lrModelFromBestModel.coefficients() + " Intercept: " + lrModelFromBestModel.intercept());
 
         return bestModel;
     }

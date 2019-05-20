@@ -87,7 +87,7 @@ public class RefactorInFiles {
                                 .map(file -> {
                                     String line = "";
                                     try {
-                                        line = new String(Files.readAllBytes(file)).replace("\r\n", "");
+                                        line = new String(Files.readAllBytes(file)).replaceAll("(\r\n|\n)", "");
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }

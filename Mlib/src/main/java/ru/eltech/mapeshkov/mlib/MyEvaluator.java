@@ -44,7 +44,7 @@ public class MyEvaluator extends Evaluator {
                 predictionDouble = Double.parseDouble(prediction);
 
                 return Math.abs(predictionDouble - labelDouble) / labelDouble * 100;
-            }).reduce((num1, num2) -> num1 + num2);
+            }).reduce((num1, num2) -> num1 + num2); // (Mean Absolute Percentage Error)
 
             error /= datasetCopy.count();
         }
