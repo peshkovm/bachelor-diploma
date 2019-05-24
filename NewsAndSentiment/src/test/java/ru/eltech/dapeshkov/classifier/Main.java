@@ -58,7 +58,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
 
         String a = "Amazon";
-        Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=5000&tag=" + a);
+        Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=5000&query=", a);
         final JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
 
         Map<LocalDate, Double> collect = Files.lines(Paths.get("NewsAndSentiment/src/test/resources/allStockData/allStockData" + "_" + a.toLowerCase() + ".txt")).collect(Collectors.toMap((String s) -> LocalDate.parse(s.split(",")[1]), s -> Double.valueOf(s.split(",")[2])));

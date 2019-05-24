@@ -1,5 +1,6 @@
 package ru.eltech.dapeshkov.classifier;
 
+import ru.eltech.dapeshkov.news.Connection;
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
 import java.io.*;
@@ -44,7 +45,21 @@ public class ProcessingTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         JSONProcessor.Train[] arr = null;
-        arr = JSONProcessor.parse(ProcessingTest.class.getResourceAsStream("/train (1).json"), JSONProcessor.Train[].class);
+        List<JSONProcessor.Train> list = new ArrayList<>();
+        int j = 0;
+        while (j < 5000) {
+            final Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=1000" + "&offset=" + j + "&query=", "Газпром");
+            j += 1000;
+            JSONProcessor.News parse = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
+            list.addAll(Arrays.stream(parse.getItems()).map(s -> {
+                JSONProcessor.Train train = new JSONProcessor.Train();
+                train.setText(s.getTitle());
+                return train;
+            }).collect(Collectors.toList()));
+            connection.close();
+        }
+
+        arr = list.toArray(new JSONProcessor.Train[0]);
 
         String[] str = new String[arr.length];
         int a = 0;
@@ -53,7 +68,7 @@ public class ProcessingTest {
         }
         get_news(str);
         lemmatizer(arr);
-        //sentiment();
+        sentiment();
         json(arr);
     }
 

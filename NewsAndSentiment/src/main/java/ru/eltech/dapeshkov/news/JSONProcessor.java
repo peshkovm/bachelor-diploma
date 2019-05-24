@@ -94,7 +94,7 @@ public class JSONProcessor {
         private String category;
         private String fronturl;
         private String id;
-        private String opinion_authors;
+        private String[] opinion_authors;
 
         private Photo photo;
 
@@ -140,7 +140,7 @@ public class JSONProcessor {
             this.id = id;
         }
 
-        public void setOpinion_authors(final String opinion_authors) {
+        public void setOpinion_authors(final String[] opinion_authors) {
             this.opinion_authors = opinion_authors;
         }
 
@@ -172,7 +172,7 @@ public class JSONProcessor {
             return id;
         }
 
-        public String getOpinion_authors() {
+        public String[] getOpinion_authors() {
             return opinion_authors;
         }
 

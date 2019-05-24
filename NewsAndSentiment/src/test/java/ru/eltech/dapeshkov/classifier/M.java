@@ -68,7 +68,7 @@ public class M {
         System.out.println((i2 / (double) arr.length) * 100);
 
         String a = "Amazon";
-        Connection connection = new Connection("https://www.rbc.ru/search/ajax/?limit=5000&tag=" + a);
+        Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=5000&query=", a);
         final JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
 
         BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("news.csv"), StandardOpenOption.CREATE);
