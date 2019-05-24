@@ -82,6 +82,7 @@ public class JSONProcessor {
     /**
      * POJO represents news article
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
         private String anons;
 
@@ -90,11 +91,9 @@ public class JSONProcessor {
             return anons;
         }
 
-        private String[] authors;
         private String category;
         private String fronturl;
         private String id;
-        private String[] opinion_authors;
 
         private Photo photo;
 
@@ -124,10 +123,6 @@ public class JSONProcessor {
             this.anons = anons;
         }
 
-        public void setAuthors(final String[] authors) {
-            this.authors = authors;
-        }
-
         public void setCategory(final String category) {
             this.category = category;
         }
@@ -140,9 +135,6 @@ public class JSONProcessor {
             this.id = id;
         }
 
-        public void setOpinion_authors(final String[] opinion_authors) {
-            this.opinion_authors = opinion_authors;
-        }
 
         public void setProject(final String project) {
             this.project = project;
@@ -156,9 +148,6 @@ public class JSONProcessor {
             return anons;
         }
 
-        public String[] getAuthors() {
-            return authors;
-        }
 
         public String getCategory() {
             return category;
@@ -170,10 +159,6 @@ public class JSONProcessor {
 
         public String getId() {
             return id;
-        }
-
-        public String[] getOpinion_authors() {
-            return opinion_authors;
         }
 
         public String getProject() {
