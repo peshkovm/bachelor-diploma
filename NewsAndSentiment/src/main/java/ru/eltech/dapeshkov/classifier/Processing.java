@@ -123,10 +123,10 @@ public class Processing<T, K> {
         countOfDocuments++;
 
         //trains the model
-        vector.stream().unordered().forEach(i -> {
+        vector.stream().unordered().distinct().forEach(i -> {
             likelihood.compute(new Pair(i, category), (k, v) -> (v == null) ? 1 : v + 1);
             vocabulary.add(i);
-            counts.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
+            //counts.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
         });
         prior_probability.compute(category, (k, v) -> (v == null) ? 1 : v + 1);
     }
@@ -137,8 +137,11 @@ public class Processing<T, K> {
         //laplacian smooth is used
         //multinomial
         Double s = Math.log(prior_probability.get(category) / (double) countOfDocuments) +
-                vector.stream().unordered().mapToDouble(value -> Math.log((likelihood.getOrDefault(new Pair(value, category), 0) + 1) / (double) (counts.get(category) + vocabulary.size())))
-                        .sum();
+                vocabulary.stream().mapToDouble(a -> {
+                    if (vector.contains(a))
+                        return Math.log((double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2));
+                    return Math.log(1 - ((double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2)));
+                }).sum();
         return s;
     }
 
