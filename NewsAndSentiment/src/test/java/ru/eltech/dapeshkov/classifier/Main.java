@@ -51,33 +51,55 @@ public class Main {
             os.write(out);
         }
         InputStream inputStream = http.getInputStream();
-        http.disconnect();
+        //http.disconnect();
         return inputStream;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        String a = "Amazon";
-        Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=5000&query=", a);
-        final JSONProcessor.News news = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
+        String a = "Сбербанк";
+        JSONProcessor.News news = new JSONProcessor.News();
+        List<JSONProcessor.Item> list = new ArrayList<>();
+        int j = 0;
+        while (j < 5000) {
+            final Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=1000" + "&offset=" + j + "&query=", "Сбербанк");
+            j += 1000;
+            JSONProcessor.News parse = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
+            list.addAll(Arrays.stream(parse.getItems()).collect(Collectors.toList()));
+            connection.close();
+        }
 
-        Map<LocalDate, Double> collect = Files.lines(Paths.get("NewsAndSentiment/src/test/resources/allStockData/allStockData" + "_" + a.toLowerCase() + ".txt")).collect(Collectors.toMap((String s) -> LocalDate.parse(s.split(",")[1]), s -> Double.valueOf(s.split(",")[2])));
-        Comparator<Map.Entry<LocalDate, Double>> entryComparator = (Map.Entry<LocalDate, Double> b, Map.Entry<LocalDate, Double> v) -> b.getKey().compareTo(v.getKey());
-        entryComparator = entryComparator.reversed();
+        news.setItems(list.toArray(new JSONProcessor.Item[0]));
+        JSONProcessor.Train[] train = new JSONProcessor.Train[news.getItems().length];
+        for (int b = 0; b < train.length; b++) {
+            train[b] = new JSONProcessor.Train();
+        }
+
         int l = 0;
         for (JSONProcessor.Item i : news.getItems()) {
-            A parse = JSONProcessor.parse(req(i.getAnons(), a), A.class);
-            String s;
-            if (parse.tonality.frt.pos > parse.tonality.frt.neg) {
-                s = "positive";
-            } else if (parse.tonality.frt.neg > parse.tonality.frt.pos) {
-                s = "negative";
-            } else {
-                s = "neutral";
+            String str = new BufferedReader(new InputStreamReader(req(i.getTitle(), a)))
+                    .lines().collect(Collectors.joining("\n"));
+            if (str.indexOf("\"frt\": [") == -1 && !str.equals("[\n" +
+                    "\n" +
+                    "]")) {
+                A parse = JSONProcessor.parse(str, A.class);
+                String s;
+                if (parse.tonality.frt.pos > parse.tonality.frt.neg) {
+                    s = "positive";
+                } else if (parse.tonality.frt.neg > parse.tonality.frt.pos) {
+                    s = "negative";
+                } else {
+                    s = "neutral";
+                }
+                train[l].setText(i.getTitle());
+                train[l].setSentiment(s);
+                l++;
             }
-            final Item item = new Item(a, s, Timestamp.valueOf(i.getPublish_date()), collect.entrySet().stream().sorted(entryComparator).filter(x -> !x.getKey().isAfter(i.getPublish_date().toLocalDate())).findFirst().get().getValue());
-            write(item.toString(), new FileOutputStream("NewsAndSentiment/src/test/resources/files/" + a.toLowerCase() + "/" + l++ + ".txt"));
         }
+        String write = JSONProcessor.write(train);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train.json"), StandardOpenOption.CREATE);
+        bufferedWriter.write(write);
+        bufferedWriter.close();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -1,6 +1,5 @@
 package ru.eltech.dapeshkov.classifier;
 
-import ru.eltech.dapeshkov.news.Connection;
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
 import java.io.*;
@@ -8,14 +7,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.newBufferedWriter;
 
 public class ProcessingTest {
     private static final Set<String> hash = new HashSet<>();
-    static Map<String, String> list = new HashMap<>();
+    static Map<String, Float> list = new HashMap<>();
     static Object[] arr;
 
     public static void get_news(String[] arr) throws IOException {
@@ -41,34 +39,26 @@ public class ProcessingTest {
             }
         });
         bufferedWriter.close();
+        ProcessingTest.arr = arr;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         JSONProcessor.Train[] arr = null;
-        List<JSONProcessor.Train> list = new ArrayList<>();
-        int j = 0;
-        while (j < 5000) {
-            final Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=1000" + "&offset=" + j + "&query=", "Газпром");
-            j += 1000;
-            JSONProcessor.News parse = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
-            list.addAll(Arrays.stream(parse.getItems()).map(s -> {
-                JSONProcessor.Train train = new JSONProcessor.Train();
-                train.setText(s.getTitle());
-                return train;
-            }).collect(Collectors.toList()));
-            connection.close();
+        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+            arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        arr = list.toArray(new JSONProcessor.Train[0]);
-
-        String[] str = new String[arr.length];
+        List<String> str = new ArrayList<>();
         int a = 0;
         for (JSONProcessor.Train i : arr) {
-            str[a++] = i.getText();
+            if (i.getText() != null)
+                str.add(i.getText());
         }
-        get_news(str);
+        get_news(str.toArray(new String[0]));
         lemmatizer(arr);
-        sentiment();
+        //sentiment();
         json(arr);
     }
 
@@ -88,33 +78,6 @@ public class ProcessingTest {
             });
         }
         bufferedWriter.close();
-        Map<String, String> collect;
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/emo_dict.csv"))).lines()) {
-            collect = lines.collect(Collectors.toMap(s -> s.split(";")[0], s -> s.split(";")[1]));
-        }
-        BufferedWriter bufferedWriter1 = newBufferedWriter(Paths.get("news_lem_parsed_sent.csv"), StandardOpenOption.CREATE);
-        final int[] i = {0};
-        try (Stream<String> lines = Files.lines(Paths.get("news_lem_parsed.csv"))) {
-            lines.forEach(s -> {
-                String[] s1 = s.split(" ");
-                for (String x : s1) {
-                    if (a[i[0]].getSentiment().equals(collect.get(x))) {
-                        try {
-                            bufferedWriter1.write(x + " ");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                try {
-                    bufferedWriter1.newLine();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                i[0]++;
-            });
-        }
-        bufferedWriter1.close();
     }
 
     public static void sentiment() throws IOException {
@@ -122,10 +85,10 @@ public class ProcessingTest {
         for (int i = 0; i < items.length; i++) {
             items[i] = new JSONProcessor.Train();
         }
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/full word_rating_after_coding.csv"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/emo_dict.csv"))).lines()) {
             lines.forEach(s -> {
                 String[] split = s.split(",");
-                list.put(split[0], split[1]);
+                list.put(split[0], Float.valueOf(split[2]));
             });
         }
         final int[] i = {0};
@@ -133,19 +96,13 @@ public class ProcessingTest {
             news_lem_parsed.forEach(s -> {
                 items[i[0]].setText(s);
                 String[] s1 = s.split(" ");
-                int pos = 0;
-                int neg = 0;
+                int a = 0;
                 for (String s2 : s1) {
-                    String s3 = list.get(s2);
+                    Float s3 = list.get(s2);
                     if (s3 != null) {
-                        if (s3.equals("negative")) {
-                            neg++;
-                        } else {
-                            pos++;
-                        }
+                        a += s3;
                     }
                 }
-                double a = ((double) pos + neg) / (pos - neg);
                 items[i[0]++].setSentiment(a > 0 ? "positive" : a < 0 ? "negative" : "neutral");
             });
         }
@@ -157,7 +114,7 @@ public class ProcessingTest {
 
     public static void json(JSONProcessor.Train[] arr) throws IOException {
         int[] i = {0};
-        try (Stream<String> news_lem_parsed = Files.lines(Paths.get("news_lem_parsed_sent.csv"))) {
+        try (Stream<String> news_lem_parsed = Files.lines(Paths.get("news_lem_parsed.csv"))) {
             news_lem_parsed.forEach(s -> {
                 arr[i[0]++].setText(s);
             });

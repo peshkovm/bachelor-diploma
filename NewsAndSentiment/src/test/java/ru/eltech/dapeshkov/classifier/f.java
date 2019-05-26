@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.newBufferedWriter;
 
@@ -17,7 +15,7 @@ public class f {
     public static void main(String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train1.json")) {
+        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -26,11 +24,11 @@ public class f {
         JSONProcessor.Train[] test = Arrays.copyOfRange(arr, (int) (arr.length * 0.5), arr.length);
 
         String write = JSONProcessor.write(train);
-        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train111.json"), StandardOpenOption.CREATE);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
         write = JSONProcessor.write(test);
-        bufferedWriter = newBufferedWriter(Paths.get("test111.json"), StandardOpenOption.CREATE);
+        bufferedWriter = newBufferedWriter(Paths.get("test1.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }
