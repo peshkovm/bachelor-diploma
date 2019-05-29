@@ -8,6 +8,7 @@ import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.clustering.KMeans;
 import org.apache.spark.ml.clustering.KMeansModel;
 import org.apache.spark.ml.evaluation.Evaluator;
+import org.apache.spark.ml.evaluation.RegressionEvaluator;
 import org.apache.spark.ml.feature.*;
 import org.apache.spark.ml.param.ParamMap;
 import org.apache.spark.ml.regression.*;
@@ -114,8 +115,7 @@ public class PredictionUtils {
         LinearRegression lr = new LinearRegression()
                 .setFeaturesCol("features")
                 .setLabelCol("label")
-                .setPredictionCol("prediction")
-                .setMaxIter(1000);
+                .setPredictionCol("prediction");
 
         GeneralizedLinearRegression glr = new GeneralizedLinearRegression()
                 .setFeaturesCol("features")
@@ -176,8 +176,8 @@ public class PredictionUtils {
         //lr
         ParamMap[] paramGrid = new ParamGridBuilder()
                 .addGrid(lr.maxIter(), new int[]{10, 1000})
-                .addGrid(lr.regParam(), new double[]{0, 0.001})
-                .addGrid(lr.elasticNetParam(), new double[]{0, 0.5, 1})
+                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.0001, 0.5, 1, 3, 5, 10})
+                .addGrid(lr.elasticNetParam(), new double[]{0, 0.3, 0.5, 0.8, 1})
                 .build();
 
         //gbt
@@ -188,8 +188,8 @@ public class PredictionUtils {
         CrossValidator crossValidator = new CrossValidator()
                 .setEstimator(pipeline)
                 .setEstimatorParamMaps(paramGrid)
-                .setEvaluator(evaluator)
-                .setNumFolds(2);
+                .setEvaluator(new RegressionEvaluator())
+                .setNumFolds(4);
 
         //PipelineModel pipelineModel = pipeline.fit(trainingDatasetWindowed);
         CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
