@@ -17,7 +17,7 @@ public class ProcessingTest {
     static Object[] arr;
 
     public static void get_news(String[] arr) throws IOException {
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(BernoulliNaiveBayes.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
             lines.forEach(hash::add);
         }
         BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("news.csv"), StandardOpenOption.CREATE);
@@ -44,7 +44,7 @@ public class ProcessingTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         JSONProcessor.Train[] arr = null;
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +85,7 @@ public class ProcessingTest {
         for (int i = 0; i < items.length; i++) {
             items[i] = new JSONProcessor.Train();
         }
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/emo_dict.csv"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(BernoulliNaiveBayes.class.getResourceAsStream("/emo_dict.csv"))).lines()) {
             lines.forEach(s -> {
                 String[] split = s.split(",");
                 list.put(split[0], Float.valueOf(split[2]));

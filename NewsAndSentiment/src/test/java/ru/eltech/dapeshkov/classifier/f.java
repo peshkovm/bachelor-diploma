@@ -15,7 +15,7 @@ public class f {
     public static void main(String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();

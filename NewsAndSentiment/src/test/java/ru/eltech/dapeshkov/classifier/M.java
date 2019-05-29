@@ -26,22 +26,22 @@ public class M {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        Processing<String, String> processing = new Processing<>();
+        BernoulliNaiveBayes<String, String> bernoulliNaiveBayes = new BernoulliNaiveBayes<>();
         JSONProcessor.Train[] arr = null;
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (JSONProcessor.Train a : arr) {
-            String[] str = Processing.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
             if (str != null) {
-                processing.train(a.getSentiment(), Arrays.asList(str));
+                bernoulliNaiveBayes.train(a.getSentiment(), Arrays.asList(str));
             }
         }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/test1.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/test1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -52,10 +52,10 @@ public class M {
         for (JSONProcessor.Train a : arr) {
             if(a.getText()==null)
                 continue;
-            String[] str = Processing.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
             String sentiment = null;
             if (str != null) {
-                sentiment = processing.sentiment(Arrays.asList(str));
+                sentiment = bernoulliNaiveBayes.sentiment(Arrays.asList(str));
             }
             if (sentiment == null) {
                 continue;
@@ -83,7 +83,7 @@ public class M {
 
         BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("news.csv"), StandardOpenOption.CREATE);
         for (JSONProcessor.Item i1 : news.getItems()) {
-            String[] parse = Processing.parse(i1.getTitle(), 1);
+            String[] parse = BernoulliNaiveBayes.parse(i1.getTitle(), 1);
             StringBuilder str = new StringBuilder();
             for (String i : parse) {
                 str.append(i);
@@ -119,7 +119,7 @@ public class M {
         entryComparator = entryComparator.reversed();
         int l = 0;
         for (JSONProcessor.Item i : news.getItems()) {
-            final Item item = new Item(a, processing.sentiment(Arrays.asList(Processing.parse(i.getAnons(), 1))), Timestamp.valueOf(i.getPublish_date()), collect.entrySet().stream().sorted(entryComparator).filter(x -> !x.getKey().isAfter(i.getPublish_date().toLocalDate())).findFirst().get().getValue());
+            final Item item = new Item(a, bernoulliNaiveBayes.sentiment(Arrays.asList(BernoulliNaiveBayes.parse(i.getAnons(), 1))), Timestamp.valueOf(i.getPublish_date()), collect.entrySet().stream().sorted(entryComparator).filter(x -> !x.getKey().isAfter(i.getPublish_date().toLocalDate())).findFirst().get().getValue());
             write(item.toString(), new FileOutputStream("NewsAndSentiment/src/test/resources/files/" + "sberbank" + "/" + l++ + ".txt"));
         }
     }

@@ -2,18 +2,19 @@ package ru.eltech.dapeshkov.classifier;
 
 import ru.eltech.dapeshkov.news.JSONProcessor;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.nio.file.Files.newBufferedWriter;
 
 /**
  * class for sentiment analysis
  */
 
-public class Processing<T, K> {
+public class BernoulliNaiveBayes<T, K> {
 
     //mapping (word,sentiment) to count, each word (or several words) gets mapped for later use in sentiment method
     private final HashMap<Pair, Integer> likelihood = new HashMap<>(); //concurency not needed final field safe published
@@ -31,12 +32,12 @@ public class Processing<T, K> {
 
     //stopwords into hash
     static {
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(BernoulliNaiveBayes.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
             lines.forEach(hash::add);
         }
     }
 
-    public Processing() {
+    public BernoulliNaiveBayes() {
     }
 
     //(word,sentiment)
@@ -171,22 +172,22 @@ public class Processing<T, K> {
 
     public static void main(final String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
-        Processing<String, String> processing = new Processing<>();
+        BernoulliNaiveBayes<String, String> bernoulliNaiveBayes = new BernoulliNaiveBayes<>();
 
-        try (InputStream in = Processing.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (JSONProcessor.Train a : arr) {
-            String[] str = Processing.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
             if (str != null) {
-                processing.train(a.getSentiment(), Arrays.asList(str));
+                bernoulliNaiveBayes.train(a.getSentiment(), Arrays.asList(str));
             }
         }
 
-        try (InputStream in = Processing.class.getResourceAsStream("/test1.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/test1.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -197,10 +198,10 @@ public class Processing<T, K> {
         for (JSONProcessor.Train a : arr) {
             if (a.getText() == null)
                 continue;
-            String[] str = Processing.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
             String sentiment = null;
             if (str != null) {
-                sentiment = processing.sentiment(Arrays.asList(str));
+                sentiment = bernoulliNaiveBayes.sentiment(Arrays.asList(str));
             }
             if (sentiment == null) {
                 continue;
