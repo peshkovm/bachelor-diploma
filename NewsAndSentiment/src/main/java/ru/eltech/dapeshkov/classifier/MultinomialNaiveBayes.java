@@ -7,14 +7,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * class for sentiment analysis
  */
 
-public class Processing {
+public class MultinomialNaiveBayes {
 
     //mapping (word,sentiment) to count, each word (or several words) gets mapped for later use in sentiment method
     private static final HashMap<Pair, Double> likelihood = new HashMap<>(); //concurency not needed final field safe published
@@ -31,12 +30,12 @@ public class Processing {
 
     //stopwords into hash
     static {
-        try (Stream<String> lines = new BufferedReader(new InputStreamReader(Processing.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
+        try (Stream<String> lines = new BufferedReader(new InputStreamReader(MultinomialNaiveBayes.class.getResourceAsStream("/stopwatch.txt"))).lines()) {
             lines.forEach(hash::add);
         }
     }
 
-    private Processing() {
+    private MultinomialNaiveBayes() {
 
     }
 
@@ -121,12 +120,12 @@ public class Processing {
      */
     static public void train(final int n) {
 
-        Processing.n = n;
+        MultinomialNaiveBayes.n = n;
 
         JSONProcessor.Train[] arr = null;
 
         //reads train data
-        try (InputStream in = Processing.class.getResourceAsStream("train.json")) {
+        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("train.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -137,7 +136,7 @@ public class Processing {
 
         //trains the model
         Arrays.stream(arr).unordered().forEach(i -> {
-            final String[] strings = parse(i.getText(), Processing.n);
+            final String[] strings = parse(i.getText(), MultinomialNaiveBayes.n);
             if (strings != null) {
                 Arrays.stream(strings).unordered().forEach((str) -> likelihood.compute(new Pair(str, i.getSentiment()), (k, v) -> (v == null) ? 1 : v + 1));
                 prior_probability.compute(i.getSentiment(), (k, v) -> (v == null) ? 1 : v + 1);
@@ -174,7 +173,7 @@ public class Processing {
      * @return sentiment
      */
     static public String sentiment(final String str) {
-        final String[] arr = parse(str, Processing.n);
+        final String[] arr = parse(str, MultinomialNaiveBayes.n);
         if (arr == null) {
             return null;
         }
@@ -188,7 +187,7 @@ public class Processing {
         train(1);
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = Processing.class.getResourceAsStream("/final/test1_2.json")) {
+        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("/final/test1_2.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
