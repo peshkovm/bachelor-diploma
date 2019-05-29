@@ -176,21 +176,16 @@ public class PredictionUtils {
 
         //lr
         ParamMap[] paramGrid = new ParamGridBuilder()
-                .addGrid(lr.maxIter(), new int[]{10, 100, 1000})
-                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.00001, 0.3, 0.5, 0.8, 1, 3, 5, 10})
-                .addGrid(lr.elasticNetParam(), new double[]{0, 0.3, 0.5, 0.8, 1})
+                .addGrid(lr.maxIter(), new int[]{10, 100, 10_000})
+                .addGrid(lr.elasticNetParam(), new double[]{0, 0.1, 0.5, 0.8, 1})
+                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.5, 1, 10, 50, 100})
                 .build();
-
-        //gbt
-/*        ParamMap[] paramGrid = new ParamGridBuilder()
-                .addGrid(gbt.maxIter(), new int[]{10, 30, 50})
-                .build();*/
 
         CrossValidator crossValidator = new CrossValidator()
                 .setEstimator(pipeline)
                 .setEstimatorParamMaps(paramGrid)
                 .setEvaluator(new RegressionEvaluator())
-                .setNumFolds(4);
+                .setNumFolds(10);
 
         //PipelineModel pipelineModel = pipeline.fit(trainingDatasetWindowed);
         CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
@@ -324,25 +319,23 @@ public class PredictionUtils {
 
         //lr
         ParamMap[] paramGrid = new ParamGridBuilder()
-                .addGrid(lr.maxIter(), new int[]{10, 1000})
-                .addGrid(lr.regParam(), new double[]{0, 0.001})
-                .addGrid(lr.elasticNetParam(), new double[]{0, 0.5, 1})
+                .addGrid(lr.maxIter(), new int[]{10, 100, 10_000})
+                .addGrid(lr.elasticNetParam(), new double[]{0, 0.1, 0.5, 0.8, 1})
+                .addGrid(lr.regParam(), new double[]{0, 0.001, 0.5, 1, 10, 50, 100})
                 .build();
-
-        //gbt
-/*        ParamMap[] paramGrid = new ParamGridBuilder()
-                .addGrid(gbt.maxIter(), new int[]{10, 30, 50})
-                .build();*/
 
         CrossValidator crossValidator = new CrossValidator()
                 .setEstimator(pipeline)
                 .setEstimatorParamMaps(paramGrid)
-                .setEvaluator(evaluator)
-                .setNumFolds(2);
+                .setEvaluator(new RegressionEvaluator())
+                .setNumFolds(10);
 
-        PipelineModel bestModel = pipeline.fit(trainingDatasetWindowed);
-        //CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
-        //Model<?> bestModel = crossValidatorModel.bestModel();
+        //PipelineModel pipelineModel = pipeline.fit(trainingDatasetWindowed);
+        CrossValidatorModel crossValidatorModel = crossValidator.fit(trainingDatasetWindowed);
+        Model<?> bestModel = crossValidatorModel.bestModel();
+
+        LinearRegressionModel lrModelFromBestModel = (LinearRegressionModel) (((PipelineModel) bestModel).stages()[pipelineStages.length - 1]);
+        logWriter.println("Coefficients: " + lrModelFromBestModel.coefficients() + " Intercept: " + lrModelFromBestModel.intercept());
 
         return bestModel;
     }

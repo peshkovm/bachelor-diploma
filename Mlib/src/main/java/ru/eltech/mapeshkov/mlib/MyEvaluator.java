@@ -37,12 +37,13 @@ public class MyEvaluator extends Evaluator {
         if (!filteredDatasetCopy.isEmpty()) {
             error = filteredDatasetCopy.map(row -> {
                 String label = row.mkString(";").split(";")[labelIndex];
-                double labelDouble = 0;
+                double labelDouble;
                 labelDouble = Double.parseDouble(label);
                 String prediction = row.mkString(";").split(";")[predictionIndex];
                 double predictionDouble;
                 predictionDouble = Double.parseDouble(prediction);
 
+                //return Math.abs(predictionDouble - labelDouble);
                 return Math.abs(predictionDouble - labelDouble) / labelDouble * 100;
             }).reduce((num1, num2) -> num1 + num2); // (Mean Absolute Percentage Error)
 

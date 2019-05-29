@@ -9,6 +9,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.ui.ApplicationFrame;
+import org.jfree.chart.util.ShapeUtils;
 import org.jfree.data.general.AbstractDataset;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeries;
@@ -111,6 +112,11 @@ public class CombinedChart extends ApplicationFrame {
         //final XYDataset data1 = collection;
         final StandardXYItemRenderer renderer = new StandardXYItemRenderer();
         renderer.setBaseShapesVisible(true);
+        renderer.setPlotLines(true);
+        Shape shape = ShapeUtils.createDiamond(3f);
+        for (int i = 0; i < seriesList.size(); i++) {
+            renderer.setSeriesShape(i, shape);
+        }
         renderer.setDefaultItemLabelGenerator(new StandardXYItemLabelGenerator());
         final org.jfree.chart.axis.NumberAxis rangeAxis = new org.jfree.chart.axis.NumberAxis(yLabel);
         final org.jfree.chart.axis.NumberAxis domainAxis = new org.jfree.chart.axis.NumberAxis(xLabel);

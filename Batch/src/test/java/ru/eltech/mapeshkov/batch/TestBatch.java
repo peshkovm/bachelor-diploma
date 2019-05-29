@@ -24,15 +24,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestBatch {
+    private static final int numOfTestFiles = 30;
+
     public static void main(String[] args) throws Exception {
         int bestWindowWidth = windowWidthPlot();
-        System.in.read();
+        //System.in.read();
         withAndWithoutSentimentPlot(bestWindowWidth);
     }
 
     private static int windowWidthPlot() throws Exception {
-        final int[] windowWidthMas = {5, 10, 15};
-        final int numOfTestFiles = 20;
+        final int[] windowWidthMas = {2, 3, 4};
         final String outDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\windowWidthPlot";
 
         RefactorInFiles.generateTestAndPredictFiles(outDirPath, windowWidthMas[0], numOfTestFiles);
@@ -56,7 +57,6 @@ public class TestBatch {
             errorMap.put(windowWidthMas[i], new ArrayList<>());
         }
 
-
 /*        plotMap.get(companyNameList.get(0).getFileName().toString()).addPoint(new XYDataItem(5, 5), keysMap.get(3));
         plotMap.get(companyNameList.get(0).getFileName().toString()).addPoint(new XYDataItem(6, 6), keysMap.get(4));
         plotMap.get(companyNameList.get(0).getFileName().toString()).addPoint(new XYDataItem(7, 7), keysMap.get(5));*/
@@ -74,7 +74,7 @@ public class TestBatch {
             resultsOfTestingLog.println("window width=" + windowWidth);
             long startExecTime = System.currentTimeMillis();
 
-            Batch.start(outDirPath, true);
+            Batch.start(outDirPath, "window width=" + windowWidth, true);
 
             Files.list(Paths.get(outDirPath + "\\testing batch in files for prediction"))
                     .filter(path -> path.toFile().isDirectory())
@@ -82,7 +82,7 @@ public class TestBatch {
                         MyFileWriter predictionLog = null;
                         try {
 
-                            PipelineModel trainedModel = PipelineModel.load(outDirPath + "\\models\\" + companyDirPath.getFileName());
+                            PipelineModel trainedModel = PipelineModel.load(outDirPath + "\\models\\" + companyDirPath.getFileName() + "\\window width=" + windowWidth);
 
                             SparkSession spark = SparkSession
                                     .builder()
@@ -157,7 +157,7 @@ public class TestBatch {
         resultsOfTestingLog.close();
 
         for (Path companyName : companyNameList)
-            plotMap.get(companyName.getFileName().toString()).saveChartAsJPEG(Paths.get(outDirPath + "\\plotJPEGs\\" + companyName.getFileName() + "\\plot.jpg"), 1600, 1200);
+            plotMap.get(companyName.getFileName().toString()).saveChartAsJPEG(Paths.get(outDirPath + "\\plotJPEGs_MSE\\" + companyName.getFileName() + "\\plot.jpg"), 1600, 800);
 
         Optional<Map.Entry<Integer, List<Double>>> mostAccurateEntry = errorMap.entrySet().stream().min(Comparator.comparingDouble(entry -> entry.getValue().get(0)));
 
@@ -167,7 +167,6 @@ public class TestBatch {
     private static void withAndWithoutSentimentPlot(int bestWindowWidth) throws Exception {
         final int[] windowWidthMas = {bestWindowWidth};
         final boolean[] isWithSentimentMas = {true, false};
-        final int numOfTestFiles = 20;
         final String outDirPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch\\withAndWithoutSentimentPlot";
 
         RefactorInFiles.generateTestAndPredictFiles(outDirPath, windowWidthMas[0], numOfTestFiles);
@@ -208,17 +207,17 @@ public class TestBatch {
 
             resultsOfTestingLog.println("window width=" + windowWidth);
             long startExecTime = System.currentTimeMillis();
-
-            Batch.start(outDirPath, i == 0);
-
             final int finalI = i;
+
+            Batch.start(outDirPath, "with sentiment=" + isWithSentimentMas[finalI], i == 0);
+
             Files.list(Paths.get(outDirPath + "\\testing batch in files for prediction"))
                     .filter(path -> path.toFile().isDirectory())
                     .forEach(companyDirPath -> {
                         MyFileWriter predictionLog = null;
                         try {
 
-                            PipelineModel trainedModel = PipelineModel.load(outDirPath + "\\models\\" + companyDirPath.getFileName());
+                            PipelineModel trainedModel = PipelineModel.load(outDirPath + "\\models\\" + companyDirPath.getFileName() + "\\with sentiment=" + (isWithSentimentMas[finalI]));
 
                             SparkSession spark = SparkSession
                                     .builder()
@@ -231,7 +230,7 @@ public class TestBatch {
                                 Dataset<Row> testingDatasetNotLabeled = spark.read()
                                         .schema(Schemes.SCHEMA_NOT_LABELED.getScheme())
                                         //.option("inferSchema", true)
-                                        //.option("header", true)л
+                                        //.option("header", true)
                                         .option("delimiter", ",")
                                         .option("charset", "UTF-8")
                                         //.csv("C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\in files for prediction\\" + companyDirPath.getFileName())
@@ -239,7 +238,7 @@ public class TestBatch {
                                         .toDF("company", "sentiment", "date", "today_stock");
                                 //.cache();
 
-                                predictionLog = new MyFileWriter(Paths.get(outDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\window width=" + windowWidth + "\\predictionLog" + testFileNum + ".txt"));
+                                predictionLog = new MyFileWriter(Paths.get(outDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\with sentiment=" + isWithSentimentMas[finalI] + "\\predictionLog" + testFileNum + ".txt"));
 
                                 predictionLog.show(testingDatasetNotLabeled);
                                 Dataset<Row> testingDataNotLabeledSorted = InDataRefactorUtils.sortByDate(spark, testingDatasetNotLabeled, Schemes.SCHEMA_NOT_LABELED.getScheme());
@@ -295,6 +294,6 @@ public class TestBatch {
         resultsOfTestingLog.close();
 
         for (Path companyName : companyNameList)
-            plotMap.get(companyName.getFileName().toString()).saveChartAsJPEG(Paths.get(outDirPath + "\\plotJPEGs\\" + companyName.getFileName() + "\\plot.jpg"), 1600, 1200);
+            plotMap.get(companyName.getFileName().toString()).saveChartAsJPEG(Paths.get(outDirPath + "\\plotJPEGs_MSE\\" + companyName.getFileName() + "\\plot.jpg"), 1600, 1200);
     }
 }

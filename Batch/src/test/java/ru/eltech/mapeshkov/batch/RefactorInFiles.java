@@ -125,7 +125,7 @@ public class RefactorInFiles {
                                 testWriter.println(randLine);
                                 TimeUnit.MILLISECONDS.sleep(10);
                             }
-                            lineNum -= 30;
+                            lineNum -= 20;
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }

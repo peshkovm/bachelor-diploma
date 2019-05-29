@@ -17,7 +17,7 @@ public class PlotAllData {
         Files.list(Paths.get(dirName))
                 .filter(path -> path.toFile().isDirectory())
                 .forEach(companyDir -> {
-                    final CombinedChart chart = new CombinedChart("Plot of all data. " + companyDir.getFileName(), "time", "stock price", "stock", "lr");
+                    final CombinedChart chart = new CombinedChart("Plot of all data. " + companyDir.getFileName(), "time", "stock price", "stock");
                     final int[] fileNum = {0};
                     try {
                         Files.list(companyDir)
@@ -50,8 +50,8 @@ public class PlotAllData {
                                                 * dSentiment + 0.0068675164531169 * dStock - 0.2282455117947890 * dSentiment + 1.0012732499680500
                                                 * dStock + 0.2383632781770730;
 
-                                        chart.addPoint(new XYDataItem(fileNum[0], Double.parseDouble(stock)), "stock");
-                                        chart.addPoint(new XYDataItem(fileNum[0]++, lrX), "lr");
+                                        chart.addPoint(new XYDataItem(fileNum[0]++, Double.parseDouble(stock)), "stock");
+                                        //chart.addPoint(new XYDataItem(fileNum[0]++, lrX), "lr");
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
@@ -59,6 +59,8 @@ public class PlotAllData {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    chart.saveChartAsJPEG(Paths.get("C:\\Users\\Денис\\Desktop\\ВКР\\images\\allData_" + companyDir.getFileName().toString() + "_Chart.jpg"), 700, 500);
                 });
     }
 }

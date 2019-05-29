@@ -1,18 +1,18 @@
 package ru.eltech.mapeshkov.stock;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import ru.eltech.mapeshkov.stock.beans.CompanyInfo;
-import ru.eltech.mapeshkov.stock.beans.StockInfo;
-import ru.eltech.mapeshkov.stock.beans.StockInfoDaily;
+        import com.fasterxml.jackson.databind.JsonNode;
+        import com.fasterxml.jackson.databind.ObjectMapper;
+        import ru.eltech.mapeshkov.stock.beans.CompanyInfo;
+        import ru.eltech.mapeshkov.stock.beans.StockInfo;
+        import ru.eltech.mapeshkov.stock.beans.StockInfoDaily;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.time.LocalDate;
-import java.util.*;
+        import java.io.BufferedReader;
+        import java.io.IOException;
+        import java.io.InputStreamReader;
+        import java.net.URL;
+        import java.net.URLConnection;
+        import java.time.LocalDate;
+        import java.util.*;
 
 /**
  * This util class contains various methods for parsing api

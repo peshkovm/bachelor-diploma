@@ -33,7 +33,7 @@ public class Batch {
      * @param isWithSentiment
      * @throws Exception
      */
-    public static void start(final String companiesDirectoryPath, final boolean isWithSentiment) throws Exception {
+    public static void start(final String companiesDirectoryPath, String windowWidthPath, final boolean isWithSentiment) throws Exception {
         System.setProperty("hadoop.home.dir", "C:\\winutils\\");
 
         SparkSession spark = SparkSession
@@ -71,7 +71,7 @@ public class Batch {
                         }
                         countOfFilesMap.put(companyDirPath.getFileName().toString(), filesCount);
 
-                        batchCalculate(spark, companyDirPath, companiesDirectoryPath, isWithSentiment);
+                        batchCalculate(spark, companyDirPath, companiesDirectoryPath, windowWidthPath, isWithSentiment);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -79,9 +79,9 @@ public class Batch {
         //}
     }
 
-    private static void batchCalculate(SparkSession spark, Path companyDirPath, String companiesDirPath, boolean isWithSentiment) throws Exception {
+    private static void batchCalculate(SparkSession spark, Path companyDirPath, String companiesDirPath, String windowWidthPath, boolean isWithSentiment) throws Exception {
         StructType schemaNotLabeled = Schemes.SCHEMA_NOT_LABELED.getScheme();
-        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\batchLog.txt"));
+        MyFileWriter logWriter = new MyFileWriter(Paths.get(companiesDirPath + "\\logFiles\\" + companyDirPath.getFileName() + "\\" + windowWidthPath + "\\batchLog.txt"));
         final int windowWidth = Schemes.SCHEMA_WINDOWED.getWindowWidth();
 
         Dataset<Row> trainingDatasetNotLabeled = spark.read()
@@ -122,7 +122,7 @@ public class Batch {
             trainedModel = PredictionUtils.trainSlidingWindowWithoutSentimentModel(trainingDatasetWindowed, windowWidth, logWriter);
 
         if (trainedModel instanceof PipelineModel) {
-            ((PipelineModel) trainedModel).write().overwrite().save(companiesDirPath + "\\models\\" + companyDirPath.getFileName());
+            ((PipelineModel) trainedModel).write().overwrite().save(companiesDirPath + "\\models\\" + companyDirPath.getFileName() + "\\" + windowWidthPath);
         }
 
         logWriter.close();
