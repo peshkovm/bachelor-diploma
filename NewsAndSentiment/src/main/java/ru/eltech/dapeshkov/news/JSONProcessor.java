@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * class for JSON parsing and writing
@@ -29,8 +30,9 @@ public class JSONProcessor {
 
     /**
      * parses JSON into POJO
+     *
      * @param str JSON to parse
-     * @param cl POJO class
+     * @param cl  POJO class
      * @return POJO
      */
     public static <T> T parse(final String str, final Class<T> cl) {
@@ -47,6 +49,7 @@ public class JSONProcessor {
 
     /**
      * parses JSON into POJO
+     *
      * @param in JSON to parse
      * @param cl POJO class
      * @return POJO
@@ -65,6 +68,7 @@ public class JSONProcessor {
 
     /**
      * writes JSON to {@link String}
+     *
      * @param obj JSON
      * @return {@link String} representing JSON
      */
@@ -167,6 +171,19 @@ public class JSONProcessor {
 
         public String getTitle() {
             return title;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Item item = (Item) o;
+            return Objects.equals(title, item.title);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(anons, category, fronturl, id, photo, project, publish_date, title);
         }
     }
 

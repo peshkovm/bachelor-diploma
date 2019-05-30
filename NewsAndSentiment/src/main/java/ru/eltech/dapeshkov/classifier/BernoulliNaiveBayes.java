@@ -44,12 +44,18 @@ public class BernoulliNaiveBayes<T, K> extends NaiveBayes<T, K> {
         //log is used to not multiply small close to 0 numbers, instead sum is used
         //laplacian smooth is used
         //multinomial
-        Double s = Math.log(prior_probability.get(category) / (double) countOfDocuments) +
+        /*Double s = Math.log(prior_probability.get(category) / (double) countOfDocuments) +
                 vocabulary.stream().mapToDouble(a -> {
                     if (vector.contains(a))
                         return Math.log((double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2));
                     return Math.log(1 - ((double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2)));
-                }).sum();
+                }).sum();*/
+        Double s = prior_probability.get(category) / (double) countOfDocuments *
+                vocabulary.stream().mapToDouble(a -> {
+                    if (vector.contains(a))
+                        return (double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2);
+                    return 1 - ((double) (likelihood.getOrDefault(new Pair(a, category), 0) + 1) / (prior_probability.get(category) + 2));
+                }).reduce((a, b) -> a * b).getAsDouble();
         return s;
     }
 
@@ -57,20 +63,20 @@ public class BernoulliNaiveBayes<T, K> extends NaiveBayes<T, K> {
         JSONProcessor.Train[] arr = null;
         BernoulliNaiveBayes<String, String> bernoulliNaiveBayes = new BernoulliNaiveBayes<>();
 
-        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/sberbank_lemtrain.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (JSONProcessor.Train a : arr) {
-            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 2);
             if (str != null) {
                 bernoulliNaiveBayes.train(a.getSentiment(), Arrays.asList(str));
             }
         }
 
-        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/test1.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/sberbank_lemtest.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,7 +87,7 @@ public class BernoulliNaiveBayes<T, K> extends NaiveBayes<T, K> {
         for (JSONProcessor.Train a : arr) {
             if (a.getText() == null)
                 continue;
-            String[] str = BernoulliNaiveBayes.parse(a.getText(), 1);
+            String[] str = BernoulliNaiveBayes.parse(a.getText(), 2);
             String sentiment = null;
             if (str != null) {
                 sentiment = bernoulliNaiveBayes.sentiment(Arrays.asList(str));

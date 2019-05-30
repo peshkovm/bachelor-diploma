@@ -15,7 +15,7 @@ public class f {
     public static void main(String[] args) throws IOException {
         JSONProcessor.Train[] arr = null;
 
-        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/train.json")) {
+        try (InputStream in = BernoulliNaiveBayes.class.getResourceAsStream("/sberbank_lem.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -24,11 +24,11 @@ public class f {
         JSONProcessor.Train[] test = Arrays.copyOfRange(arr, (int) (arr.length * 0.5), arr.length);
 
         String write = JSONProcessor.write(train);
-        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train.json"), StandardOpenOption.CREATE);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("sberbank_lemtrain.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
         write = JSONProcessor.write(test);
-        bufferedWriter = newBufferedWriter(Paths.get("test1.json"), StandardOpenOption.CREATE);
+        bufferedWriter = newBufferedWriter(Paths.get("sberbank_lemtest.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }

@@ -56,20 +56,20 @@ public class MultinomialNaiveBayes<T, K> extends NaiveBayes<T, K> {
         JSONProcessor.Train[] arr = null;
         MultinomialNaiveBayes<String, String> processing = new MultinomialNaiveBayes<>();
 
-        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("/train111.json")) {
+        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("/sberbank_lemtrain.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         for (JSONProcessor.Train a : arr) {
-            String[] str = MultinomialNaiveBayes.parse(a.getText(), 1);
+            String[] str = MultinomialNaiveBayes.parse(a.getText(), 2);
             if (str != null) {
                 processing.train(a.getSentiment(), Arrays.asList(str));
             }
         }
 
-        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("/test111.json")) {
+        try (InputStream in = MultinomialNaiveBayes.class.getResourceAsStream("/sberbank_lemtest.json")) {
             arr = JSONProcessor.parse(in, JSONProcessor.Train[].class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,7 +78,7 @@ public class MultinomialNaiveBayes<T, K> extends NaiveBayes<T, K> {
         int i = 0;
 
         for (JSONProcessor.Train a : arr) {
-            String[] str = MultinomialNaiveBayes.parse(a.getText(), 1);
+            String[] str = MultinomialNaiveBayes.parse(a.getText(), 2);
             String sentiment = null;
             if (str != null) {
                 sentiment = processing.sentiment(Arrays.asList(str));

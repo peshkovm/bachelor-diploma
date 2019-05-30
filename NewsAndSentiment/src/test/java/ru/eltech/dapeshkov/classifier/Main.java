@@ -57,19 +57,20 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        String a = "Сбербанк";
+        String a = "Газпром";
+
         JSONProcessor.News news = new JSONProcessor.News();
-        List<JSONProcessor.Item> list = new ArrayList<>();
+        Set<JSONProcessor.Item> list = new HashSet<>();
         int j = 0;
         while (j < 5000) {
-            final Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=1000" + "&offset=" + j + "&query=", "Сбербанк");
+            final Connection connection = new Connection("https://www.rbc.ru/v10/search/ajax/?project=rbcnews&limit=1000" + "&offset=" + j + "&query=", a);
             j += 1000;
             JSONProcessor.News parse = JSONProcessor.parse(connection.get(), JSONProcessor.News.class);
             list.addAll(Arrays.stream(parse.getItems()).collect(Collectors.toList()));
             connection.close();
         }
 
-        news.setItems(list.toArray(new JSONProcessor.Item[0]));
+        news.setItems(list.stream().distinct().toArray(JSONProcessor.Item[]::new));
         JSONProcessor.Train[] train = new JSONProcessor.Train[news.getItems().length];
         for (int b = 0; b < train.length; b++) {
             train[b] = new JSONProcessor.Train();
@@ -97,7 +98,7 @@ public class Main {
             }
         }
         String write = JSONProcessor.write(train);
-        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("train.json"), StandardOpenOption.CREATE);
+        BufferedWriter bufferedWriter = newBufferedWriter(Paths.get("gazprom.json"), StandardOpenOption.CREATE);
         bufferedWriter.write(write);
         bufferedWriter.close();
     }
