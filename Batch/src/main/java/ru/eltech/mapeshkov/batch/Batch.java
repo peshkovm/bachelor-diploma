@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Batch {
 
-    private static final String mainDirectoryPath = "C:\\JavaLessons\\bachelor-diploma\\Batch\\src\\test\\resources\\testing batch";
+    private static final String mainDirectoryPath = "C:\\JavaLessons\\bachelor-diploma\\Streaming\\src\\test\\resources\\batch_files";
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Batch() {
@@ -49,7 +49,7 @@ public class Batch {
         // Create a Java version of the Spark Context
         JavaSparkContext sc = new JavaSparkContext(conf);
 
-        String companiesDirPath = mainDirectoryPath + "\\allStockDataWithSentimentInitial";
+        String companiesDirPath = mainDirectoryPath + "\\companies";
 
         HashMap<String, Long> countOfFilesMap = new HashMap<>();
 

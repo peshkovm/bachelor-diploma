@@ -40,7 +40,11 @@ public class Watcher {
             return null;
         }
 
-        List<Path> collect = wk.pollEvents().stream().filter(event -> event.kind() == watchEvent).map(event -> path.resolve((Path) event.context())).collect(Collectors.toList());
+/*        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        wk.pollEvents().stream().distinct().filter(event -> event.kind() == watchEvent).forEach(s -> System.out.println(s.context()));
+        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");*/
+
+        List<Path> collect = wk.pollEvents().stream().distinct().filter(event -> event.kind() == watchEvent).map(event -> path.resolve((Path) event.context())).collect(Collectors.toList());
         // reset the key
         boolean valid = wk.reset();
         if (!valid) {

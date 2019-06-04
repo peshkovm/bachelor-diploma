@@ -1,15 +1,16 @@
 package ru.eltech.dapeshkov.streaming;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.spark.storage.StorageLevel;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Receiver to push data to Apache Streaming
@@ -21,7 +22,7 @@ public class Receiver extends org.apache.spark.streaming.receiver.Receiver<Strin
 
     /**
      * @param directory the path to directory to read files from
-     * @param window size of window (how many messages should be accumulated before pushing to Apache Spark)
+     * @param window    size of window (how many messages should be accumulated before pushing to Apache Spark)
      */
     public Receiver(String directory, int window) {
         super(StorageLevel.MEMORY_AND_DISK_2());
@@ -40,7 +41,13 @@ public class Receiver extends org.apache.spark.streaming.receiver.Receiver<Strin
     }
 
     private void receive() {
-        List<String> list = Arrays.asList(new String[window]);
+        //List<String> list = Arrays.asList(new String[window]);
+        Map<String, String> map = new LinkedHashMap<String, String>(window + 1, 1) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                return size() > window;
+            }
+        };
         Watcher watcher = null;
         try {
             watcher = new Watcher(Paths.get(directory));
@@ -53,17 +60,27 @@ public class Receiver extends org.apache.spark.streaming.receiver.Receiver<Strin
         while (!isStopped()) {
             changedFiles = watcher.getChangedFiles(StandardWatchEventKinds.ENTRY_MODIFY);
             for (Path path : changedFiles) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
-                    userInput = reader.readLine();
-                    if (userInput != null) {
-                        list.set(i, userInput);
-                        i = (i + 1) % window;
+                if (!map.containsKey(path.toString())) {
+                    //System.out.println(path.toString());
+                    try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
+                        userInput = reader.readLine();
+                        if (userInput != null) {
+                            map.put(path.toString(), userInput);
+
+                            //list.set(i, userInput);
+                            //i = Integer.parseInt(FilenameUtils.removeExtension(path.getFileName().toString())) % window;
+                            //i = (i++) % window;
+                            if (map.size() == window) {
+                                store(map.values().iterator());
+                                PrintWriter writer = new PrintWriter(new FileWriter("receive.txt", true), true);
+                                map.keySet().forEach(writer::println);
+                                writer.println();
+                                writer.close();
+                            }
+                        }
+                    } catch (IOException e) {
+                        stop("IOException");
                     }
-                    if (list.get(list.size() - 1) != null) {
-                        store(list.iterator());
-                    }
-                } catch (IOException e) {
-                    stop("IOException");
                 }
             }
         }
