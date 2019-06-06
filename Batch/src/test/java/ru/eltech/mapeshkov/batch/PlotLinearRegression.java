@@ -31,23 +31,27 @@ public class PlotLinearRegression {
         HashMap<String, List<Record>> records = downloadPlotData();
         records = reformatNotLabeledDataToLabeled(records);
 
-        AnalysisLauncher.open(new ScatterDemo(records));
+        //AnalysisLauncher.open(new PlotAllData(records));
+        AllDataChartLR(records);
     }
 
     private static void AllDataChartLR(HashMap<String, List<Record>> records) {
-        CombinedChart[] charts = new CombinedChart[2];
+        CombinedChart[] charts = new CombinedChart[records.size()];
         final int[] i = {0};
+        final int[] num = {0};
 
         records.entrySet().forEach(entry -> {
             String company = entry.getKey();
-            charts[i[0]] = new CombinedChart("allData " + company, "stock", "label", "negative", "positive"/*, "lr_0", "lr_2"*/);
+            charts[i[0]] = new CombinedChart("allData " + company, "stock", "label", "negative", "neutral", "positive"/*, "lr_0", "lr_2"*/);
 
             entry.getValue().forEach(record -> {
                 String sentiment = "";
 
                 sentiment = record.getSentiment() == 0 ? "negative" : record.getSentiment() == 1 ? "neutral" : "positive";
 
-                charts[i[0]].addPoint(new XYDataItem(record.getToday_stock(), record.getLabel()), sentiment);
+                if (num[0] >= 19 && num[0] <= 24)
+                    charts[i[0]].addPoint(new XYDataItem(record.getToday_stock(), record.getLabel()), "negative");
+                num[0]++;
             });
             i[0]++;
         });
@@ -72,9 +76,9 @@ public class PlotLinearRegression {
             }
         }*/
 
-        for (CombinedChart chart : charts) {
+/*        for (CombinedChart chart : charts) {
             chart.saveChartAsJPEG(Paths.get("C:\\Users\\Денис\\Desktop\\ВКР\\images\\lr" + chart.getTitle() + ".jpg"), 700, 500);
-        }
+        }*/
     }
 
     private static class SurfaceDemo extends AbstractAnalysis {
@@ -160,22 +164,22 @@ public class PlotLinearRegression {
                 int size = values.size();
                 Coord3d[] points = new Coord3d[size];
                 Color[] colors = new Color[size];
-
+                String companyName = "apple";
                 for (int i = 0; i < size; i++) {
                     Random r = new Random();
                     double x = 0;
-                    if (this.records.get("google").get(i).getSentiment() == 0) {
-                        x = this.records.get("google").get(i).getSentiment() + 0;
+                    if (this.records.get(companyName).get(i).getSentiment() == 0) {
+                        x = this.records.get(companyName).get(i).getSentiment() + 0;
                         colors[i] = new Color(255, 15, 15, 255);
-                    } else if (this.records.get("google").get(i).getSentiment() == 1) {
-                        x = this.records.get("google").get(i).getSentiment() + 100;
+                    } else if (this.records.get(companyName).get(i).getSentiment() == 1) {
+                        x = this.records.get(companyName).get(i).getSentiment() + 100;
                         colors[i] = new Color(7, 222, 45, 255);
-                    } else if (this.records.get("google").get(i).getSentiment() == 2) {
-                        x = this.records.get("google").get(i).getSentiment() + 200;
+                    } else if (this.records.get(companyName).get(i).getSentiment() == 2) {
+                        x = this.records.get(companyName).get(i).getSentiment() + 200;
                         colors[i] = new Color(7, 13, 222, 255);
                     }
-                    double y = this.records.get("google").get(i).getToday_stock();
-                    double z = this.records.get("google").get(i).getLabel()/2;
+                    double y = this.records.get(companyName).get(i).getToday_stock();
+                    double z = this.records.get(companyName).get(i).getLabel() / 2;
                     points[i] = new Coord3d(x, y, z);
                 }
 
