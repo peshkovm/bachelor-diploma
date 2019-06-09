@@ -24,7 +24,7 @@ public class PlotHelper {
     public PlotHelper(final String fileName) throws IOException, InterruptedException {
         this.fileName = fileName;
 
-        chart = new CombinedChart("news/stock chart", "label", "date", keys);
+        chart = new CombinedChart("news/stock chart", "time", "label", keys);
 
 
         refresh();
