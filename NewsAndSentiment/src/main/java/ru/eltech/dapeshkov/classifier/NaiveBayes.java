@@ -55,7 +55,7 @@ public abstract class NaiveBayes<T, K> {
         }
     }
 
-    static String[] parse(final String str, final int n) {
+    public static String[] parse(final String str, final int n) {
         String[] res = str.toLowerCase().split("[^\\p{L}]+");
         if (res.length < n) return null;
         res = Arrays.stream(res).filter(t -> !hash.contains(t)).toArray(String[]::new);
