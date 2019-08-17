@@ -1,6 +1,8 @@
 # bachelor-diploma
 ELTECH bachelor diploma
 
+ВКР
+
 ![](spark.png)
 
 1. Сайт с которого берутся новости
